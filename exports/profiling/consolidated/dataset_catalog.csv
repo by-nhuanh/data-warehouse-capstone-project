@@ -1,0 +1,9 @@
+﻿Tệp Dữ Liệu,Số Dòng,Số Cột,Ô Null,Tỷ lệ Null (%)
+application_train.csv,307511,122,9152465,24.3959
+application_test.csv,48744,121,1404419,23.8117
+bureau.csv,1716428,17,3939947,13.5026
+bureau_balance.csv,27299925,3,0,0.0
+previous_application.csv,1670214,37,11109336,17.9769
+POS_CASH_balance.csv,10001358,8,52158,0.0652
+installments_payments.csv,13605401,8,5810,0.0053
+credit_card_balance.csv,3840312,23,5877356,6.6541

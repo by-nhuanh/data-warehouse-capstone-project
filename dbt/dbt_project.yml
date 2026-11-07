@@ -1,0 +1,18 @@
+name: credit_lakehouse
+version: '1.0.0'
+config-version: 2
+profile: credit_lakehouse
+model-paths: ["models"]
+test-paths: ["tests"]
+clean-targets: ["target", "dbt_packages"]
+models:
+  credit_lakehouse:
+    staging:
+      +materialized: view
+      +schema: silver
+    intermediate:
+      +materialized: view
+      +schema: silver
+    marts:
+      +materialized: table
+      +schema: gold

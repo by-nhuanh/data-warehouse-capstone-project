@@ -1,0 +1,5 @@
+﻿Tệp Dữ Liệu,Ý Nghĩa Nghiệp Vụ,Số dòng,Số cột,Dòng trùng lặp,Số đơn vay cũ (SK_ID_PREV),Số khách hàng (SK_ID_CURR),Tỷ lệ Null (%)
+previous_application.csv,Lịch sử nộp đơn vay quá khứ tại Home Credit,1670214,37,0,1670214,338857,18.06
+POS_CASH_balance.csv,Dư nợ điểm bán POS & Vay tiền mặt theo tháng,10001358,8,0,936325,337252,0.17
+installments_payments.csv,Lịch sử thanh toán từng kỳ trả nợ thực tế,13605401,8,0,997752,339587,0.01
+credit_card_balance.csv,"Dư nợ, hạn mức & rút tiền thẻ tín dụng",3840312,23,0,104307,103558,6.81

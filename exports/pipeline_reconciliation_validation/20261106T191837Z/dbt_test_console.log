@@ -1,0 +1,66 @@
+[0m19:26:44  Running with dbt=1.9.4
+[0m19:26:45  Registered adapter: duckdb=1.9.4
+[0m19:26:45  Unable to do partial parsing because saved manifest not found. Starting full parse.
+[0m19:26:48  Found 11 models, 26 data tests, 8 sources, 430 macros
+[0m19:26:48  
+[0m19:26:48  Concurrency: 4 threads (target='local')
+[0m19:26:48  
+[0m19:26:49  1 of 26 START test accepted_values_stg_application_train_normalized_target__0__1  [RUN]
+[0m19:26:49  4 of 26 START test bureau_balance_status_mapping ............................... [RUN]
+[0m19:26:49  2 of 26 START test accepted_values_stg_bureau_balance_STATUS_DPD__0__1__2__3__4__5  [RUN]
+[0m19:26:49  3 of 26 START test accepted_values_stg_bureau_balance_STATUS__C__0__1__2__3__4__5__X  [RUN]
+[0m19:26:49  1 of 26 PASS accepted_values_stg_application_train_normalized_target__0__1 ..... [[32mPASS[0m in 0.61s]
+[0m19:26:49  5 of 26 START test not_null_fct_application_train_sk_id_curr ................... [RUN]
+[0m19:26:50  5 of 26 PASS not_null_fct_application_train_sk_id_curr ......................... [[32mPASS[0m in 0.36s]
+[0m19:26:50  6 of 26 START test not_null_feature_mart_application_train_sk_id_curr .......... [RUN]
+[0m19:26:50  3 of 26 PASS accepted_values_stg_bureau_balance_STATUS__C__0__1__2__3__4__5__X . [[32mPASS[0m in 1.29s]
+[0m19:26:50  6 of 26 PASS not_null_feature_mart_application_train_sk_id_curr ................ [[32mPASS[0m in 0.31s]
+[0m19:26:50  7 of 26 START test not_null_int_application_train_prep_sk_id_curr .............. [RUN]
+[0m19:26:50  8 of 26 START test not_null_stg_application_test_normalized_sk_id_curr ......... [RUN]
+[0m19:26:50  8 of 26 PASS not_null_stg_application_test_normalized_sk_id_curr ............... [[32mPASS[0m in 0.27s]
+[0m19:26:50  9 of 26 START test not_null_stg_application_train_normalized_sk_id_curr ........ [RUN]
+[0m19:26:50  7 of 26 PASS not_null_int_application_train_prep_sk_id_curr .................... [[32mPASS[0m in 0.37s]
+[0m19:26:50  10 of 26 START test not_null_stg_bureau_balance_STATUS ......................... [RUN]
+[0m19:26:51  10 of 26 PASS not_null_stg_bureau_balance_STATUS ............................... [[32mPASS[0m in 0.18s]
+[0m19:26:51  11 of 26 START test not_null_stg_bureau_normalized_sk_id_bureau ................ [RUN]
+[0m19:26:51  9 of 26 PASS not_null_stg_application_train_normalized_sk_id_curr .............. [[32mPASS[0m in 0.35s]
+[0m19:26:51  12 of 26 START test not_null_stg_credit_card_balance_normalized_months_balance . [RUN]
+[0m19:26:51  12 of 26 PASS not_null_stg_credit_card_balance_normalized_months_balance ....... [[32mPASS[0m in 0.71s]
+[0m19:26:51  13 of 26 START test not_null_stg_credit_card_balance_normalized_sk_id_prev ..... [RUN]
+[0m19:26:51  11 of 26 PASS not_null_stg_bureau_normalized_sk_id_bureau ...................... [[32mPASS[0m in 0.88s]
+[0m19:26:52  14 of 26 START test not_null_stg_installments_payments_normalized_instalment_number  [RUN]
+[0m19:26:53  14 of 26 PASS not_null_stg_installments_payments_normalized_instalment_number .. [[32mPASS[0m in 1.64s]
+[0m19:26:53  15 of 26 START test not_null_stg_installments_payments_normalized_instalment_version  [RUN]
+[0m19:26:53  13 of 26 PASS not_null_stg_credit_card_balance_normalized_sk_id_prev ........... [[32mPASS[0m in 1.79s]
+[0m19:26:53  16 of 26 START test not_null_stg_installments_payments_normalized_sk_id_prev ... [RUN]
+[0m19:26:54  4 of 26 PASS bureau_balance_status_mapping ..................................... [[32mPASS[0m in 5.79s]
+[0m19:26:54  17 of 26 START test not_null_stg_pos_cash_balance_normalized_months_balance .... [RUN]
+[0m19:26:56  15 of 26 PASS not_null_stg_installments_payments_normalized_instalment_version . [[32mPASS[0m in 2.42s]
+[0m19:26:56  18 of 26 START test not_null_stg_pos_cash_balance_normalized_sk_id_prev ........ [RUN]
+[0m19:26:56  17 of 26 PASS not_null_stg_pos_cash_balance_normalized_months_balance .......... [[32mPASS[0m in 1.18s]
+[0m19:26:56  19 of 26 START test not_null_stg_previous_application_normalized_sk_id_prev .... [RUN]
+[0m19:26:57  19 of 26 PASS not_null_stg_previous_application_normalized_sk_id_prev .......... [[32mPASS[0m in 0.96s]
+[0m19:26:57  20 of 26 START test unique_fct_application_train_sk_id_curr .................... [RUN]
+[0m19:26:57  20 of 26 PASS unique_fct_application_train_sk_id_curr .......................... [[32mPASS[0m in 0.35s]
+[0m19:26:57  21 of 26 START test unique_feature_mart_application_train_sk_id_curr ........... [RUN]
+[0m19:26:57  2 of 26 PASS accepted_values_stg_bureau_balance_STATUS_DPD__0__1__2__3__4__5 ... [[32mPASS[0m in 8.43s]
+[0m19:26:57  22 of 26 START test unique_int_application_train_prep_sk_id_curr ............... [RUN]
+[0m19:26:57  16 of 26 PASS not_null_stg_installments_payments_normalized_sk_id_prev ......... [[32mPASS[0m in 4.11s]
+[0m19:26:57  23 of 26 START test unique_stg_application_test_normalized_sk_id_curr .......... [RUN]
+[0m19:26:57  21 of 26 PASS unique_feature_mart_application_train_sk_id_curr ................. [[32mPASS[0m in 0.41s]
+[0m19:26:57  24 of 26 START test unique_stg_application_train_normalized_sk_id_curr ......... [RUN]
+[0m19:26:58  23 of 26 PASS unique_stg_application_test_normalized_sk_id_curr ................ [[32mPASS[0m in 0.24s]
+[0m19:26:58  25 of 26 START test unique_stg_bureau_normalized_sk_id_bureau .................. [RUN]
+[0m19:26:58  22 of 26 PASS unique_int_application_train_prep_sk_id_curr ..................... [[32mPASS[0m in 0.52s]
+[0m19:26:58  26 of 26 START test unique_stg_previous_application_normalized_sk_id_prev ...... [RUN]
+[0m19:26:58  24 of 26 PASS unique_stg_application_train_normalized_sk_id_curr ............... [[32mPASS[0m in 0.54s]
+[0m19:26:59  18 of 26 PASS not_null_stg_pos_cash_balance_normalized_sk_id_prev .............. [[32mPASS[0m in 2.93s]
+[0m19:26:59  25 of 26 PASS unique_stg_bureau_normalized_sk_id_bureau ........................ [[32mPASS[0m in 1.53s]
+[0m19:26:59  26 of 26 PASS unique_stg_previous_application_normalized_sk_id_prev ............ [[32mPASS[0m in 1.59s]
+[0m19:26:59  
+[0m19:26:59  Finished running 26 data tests in 0 hours 0 minutes and 10.84 seconds (10.84s).
+[0m19:26:59  
+[0m19:26:59  [32mCompleted successfully[0m
+[0m19:26:59  
+[0m19:26:59  Done. PASS=26 WARN=0 ERROR=0 SKIP=0 TOTAL=26
+

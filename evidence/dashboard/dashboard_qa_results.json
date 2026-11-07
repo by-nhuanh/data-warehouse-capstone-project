@@ -1,0 +1,112 @@
+{
+  "checked_at_utc": "2026-11-05T06:28:46.665579+00:00",
+  "database": "/content/drive/MyDrive/Data_Lakehouse_Project/database/credit_lakehouse.duckdb",
+  "database_mode": "read_only",
+  "results": [
+    {
+      "test": "Application Train",
+      "status": "PASS",
+      "actual": 307511,
+      "expected": 307511,
+      "detail": ""
+    },
+    {
+      "test": "Application Test",
+      "status": "PASS",
+      "actual": 48744,
+      "expected": 48744,
+      "detail": ""
+    },
+    {
+      "test": "Feature Mart",
+      "status": "PASS",
+      "actual": 307511,
+      "expected": 307511,
+      "detail": ""
+    },
+    {
+      "test": "Feature Mart duplicate SK_ID_CURR",
+      "status": "PASS",
+      "actual": 0,
+      "expected": 0,
+      "detail": ""
+    },
+    {
+      "test": "TARGET = 1 rate (%)",
+      "status": "PASS",
+      "actual": 8.072881945686495,
+      "expected": 8.0729,
+      "detail": ""
+    },
+    {
+      "test": "CTI median",
+      "status": "NEEDS_REVIEW",
+      "actual": 3.265066666666667,
+      "expected": 3.26,
+      "detail": "Đối chiếu với KPI Catalog Chương 3; cần kiểm tra phạm vi nếu khác"
+    },
+    {
+      "test": "Installments source rows",
+      "status": "PASS",
+      "actual": 13605401,
+      "expected": 13605401,
+      "detail": ""
+    },
+    {
+      "test": "Installment period count",
+      "status": "PASS",
+      "actual": 12951918.0,
+      "expected": 12951918,
+      "detail": "Đối chiếu baseline Chương 3"
+    },
+    {
+      "test": "Late installment periods",
+      "status": "PASS",
+      "actual": 1103475.0,
+      "expected": 1103475,
+      "detail": "Đối chiếu baseline Chương 3"
+    },
+    {
+      "test": "Valid-date periods",
+      "status": "PASS",
+      "actual": 12949013.0,
+      "expected": 12949013,
+      "detail": "Đối chiếu baseline Chương 3"
+    },
+    {
+      "test": "Inconsistent due",
+      "status": "PASS",
+      "actual": 0.0,
+      "expected": 0,
+      "detail": "Đối chiếu baseline Chương 3"
+    },
+    {
+      "test": "Inconsistent due dates",
+      "status": "PASS",
+      "actual": 0.0,
+      "expected": 0,
+      "detail": "Đối chiếu baseline Chương 3"
+    },
+    {
+      "test": "Payment gap periods",
+      "status": "PASS",
+      "actual": 2934.0,
+      "expected": 2934,
+      "detail": "Đối chiếu baseline Chương 3"
+    },
+    {
+      "test": "Positive payment gap",
+      "status": "PASS",
+      "actual": 21164943.06,
+      "expected": 21164943.06,
+      "detail": "Đối chiếu baseline Chương 3"
+    },
+    {
+      "test": "CSV export",
+      "status": "NOT TESTED",
+      "actual": null,
+      "expected": null,
+      "detail": "Chưa tìm thấy ho_so_filtered.csv trong Drive"
+    }
+  ]
+}

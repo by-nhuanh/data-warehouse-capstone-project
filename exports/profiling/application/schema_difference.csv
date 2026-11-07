@@ -1,0 +1,4 @@
+﻿check,columns
+train_only,TARGET
+test_only,
+shared_column_count,121

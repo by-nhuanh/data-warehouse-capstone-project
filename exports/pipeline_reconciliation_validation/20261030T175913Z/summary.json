@@ -1,0 +1,14 @@
+{
+  "task": "4.1 Pipeline và kiểm chứng dữ liệu",
+  "run_id": "20261030T175913Z",
+  "database": "/content/drive/MyDrive/Data_Lakehouse_Project/database/credit_lakehouse.duckdb",
+  "check_count": 20,
+  "status_counts": {
+    "PASS": 18,
+    "FAIL": 1,
+    "INFO": 1
+  },
+  "final_state": "NEEDS_REVIEW",
+  "results_file": "/content/drive/MyDrive/Data_Lakehouse_Project/exports/task_4_1/20261030T175913Z/task_4_1_test_results.csv",
+  "dbt_log_file": "/content/drive/MyDrive/Data_Lakehouse_Project/exports/task_4_1/20261030T175913Z/dbt_test_console.log"
+}

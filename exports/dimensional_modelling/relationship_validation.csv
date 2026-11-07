@@ -1,0 +1,7 @@
+relationship,total_rows,unmatched_rows,unmatched_pct
+bureau -> application,1716428,0,0.0
+bureau_balance -> bureau,27299925,3120184,11.4293
+credit_card_balance -> previous_application,3840312,1082816,28.196
+installments_payments -> previous_application,13605401,1250826,9.1936
+pos_cash_balance -> previous_application,10001358,340561,3.4051
+previous_application -> application,1670214,0,0.0

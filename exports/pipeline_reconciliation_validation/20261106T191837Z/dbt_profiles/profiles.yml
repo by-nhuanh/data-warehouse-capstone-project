@@ -1,0 +1,7 @@
+credit_lakehouse:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "/content/drive/MyDrive/Data_Lakehouse_Project/database/credit_lakehouse.duckdb"
+      threads: 4

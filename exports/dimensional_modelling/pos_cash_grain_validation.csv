@@ -1,0 +1,2 @@
+table_name,grain_keys,total_rows,distinct_key_groups,duplicate_extra_rows,rows_with_null_keys
+pos_cash_balance,"SK_ID_PREV, MONTHS_BALANCE",10001358.0,10001358,0.0,0.0

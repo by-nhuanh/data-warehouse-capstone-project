@@ -1,0 +1,12 @@
+﻿test_name,scope,expected
+not_null_unique,Khóa nghiệp vụ,0 vi phạm
+composite_grain,Fact tháng/kỳ,0 khóa trùng
+payment_reconciliation,Thanh toán,Chênh lệch 0
+due_consistency,Nghĩa vụ theo kỳ,Không mâu thuẫn
+relationship_audit,Các bảng lịch sử,Bảo toàn unmatched
+no_fanout,Feature Mart,1 dòng / SK_ID_CURR
+status_domain,Bureau Balance,Giữ C/X riêng
+surrogate_key_unique,Surrogate Keys,Không NULL và không trùng
+installment_period_grain,fact_installment_period,Một dòng trên mỗi kỳ trả góp
+late_payment_domain,has_late_payment,"Giá trị thuộc tập {0,1,NULL}"
+payment_date_consistency,days_late_last_payment,Chỉ tính khi dữ liệu ngày hợp lệ

@@ -1,0 +1,5 @@
+﻿Tên Feature Đề xuất,Ý nghĩa Nghiệp vụ,Ứng dụng Tầng Gold / ML
+BUREAU_LOAN_COUNT,Tổng số khoản vay tại các ngân hàng khác,Đo lường mức độ tiếp cận tín dụng
+BUREAU_ACTIVE_LOAN_RATIO,Tỷ lệ khoản vay còn đang mở,Đo lường áp lực trả nợ hiện tại
+BUREAU_TOTAL_DEBT,Tổng dư nợ tín dụng còn lại (AMT_CREDIT_SUM_DEBT),Tính toán chỉ số DTI (Tổng nợ / Thu nhập)
+BUREAU_MAX_OVERDUE_DAYS,Số ngày quá hạn lớn nhất từng ghi nhận,Cảnh báo rủi ro vỡ nợ sớm (Early Warning)
