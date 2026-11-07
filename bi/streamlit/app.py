@@ -6,7 +6,8 @@ from data_access import connect,query,application_sql,PERIOD_SQL
 
 st.set_page_config(page_title='Home Credit • Giám sát rủi ro',layout='wide')
 st.markdown('<style>.block-container{padding-top:1.5rem}div[data-testid="stMetric"]{background:#f4f6f8;padding:16px;border:1px solid #dae0e6;border-radius:6px}</style>',unsafe_allow_html=True)
-root=st.sidebar.text_input('Thư mục Data_Lakehouse_Project',os.environ.get('LAKEHOUSE_ROOT',str(Path(__file__).resolve().parents[2])))
+# Thu muc goc cua repository tren Streamlit Cloud
+root = Path(__file__).resolve().parents[2]
 page=st.sidebar.radio('Màn hình',['Hồ sơ tiếp nhận','Lịch sử tín dụng'])
 @st.cache_resource
 def source(root): return connect(root)
