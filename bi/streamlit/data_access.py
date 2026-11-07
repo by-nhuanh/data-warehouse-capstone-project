@@ -7,8 +7,18 @@ def connect(root):
     c=duckdb.connect(':memory:')
     c.execute("SET threads=4")
     availability={}
-    manifest=root/'data/manifests/latest.json'
-    entries=json.loads(manifest.read_text())['sources'] if manifest.exists() else []
+    manifest = root / "data" / "manifests" / "latest.json"
+    if not manifest.is_file():
+        raise FileNotFoundError(
+            f"Khong tim thay file manifest: {manifest}"
+        )
+    with manifest.open("r", encoding="utf-8") as f:
+        manifest_data = json.load(f)
+    entries = manifest_data.get("sources", [])
+    if len(entries) != 8:
+        raise ValueError(
+            f"Manifest phai co 8 nguon, hien co {len(entries)}"
+        )
     for e in entries:
         name=e['duckdb_relation'].split('.')[-1]
         p=root/e['parquet']
@@ -35,7 +45,17 @@ def connect(root):
     db=root/'database/credit_lakehouse.duckdb'
     if db.exists():
         c.execute("ATTACH '"+str(db).replace("'","''")+"' AS original (READ_ONLY)")
-    return c,availability
+    missing_sources = [
+        name
+        for name, info in availability.items()
+        if info["status"] == "MISSING"
+    ]
+    if missing_sources:
+        raise FileNotFoundError(
+            "Thieu du lieu cho dashboard: "
+            + ", ".join(missing_sources)
+        )
+    return c, availability
 
 def query(c,sql,params=None):
     return c.execute(sql,params or []).fetchdf()
