@@ -15,18 +15,100 @@ ROOT = Path(__file__).resolve().parents[2]
 
 st.markdown("""
 <style>
-.block-container {
-    padding-top: 1.4rem;
-    padding-bottom: 2rem;
+:root {
+    --dtwh-bg: #F6F9FD;
+    --dtwh-card: #FFFFFF;
+    --dtwh-border: #D7E1EC;
+    --dtwh-ink: #14263E;
+    --dtwh-text: #34445B;
+    --dtwh-muted: #52647C;
+    --dtwh-blue: #116DA6;
 }
-div[data-testid="stMetric"] {
-    padding: 16px;
-    border: 1px solid #dbe2ea;
-    border-radius: 12px;
+.stApp {
+    background: var(--dtwh-bg);
+    color: var(--dtwh-text);
+}
+.block-container {
+    max-width: 1460px;
+    padding: 1.8rem 2.2rem 3rem;
+}
+[data-testid="stSidebar"] {
+    background: #FFFFFF;
+    border-right: 1px solid var(--dtwh-border);
+}
+h1, h2, h3 {
+    color: var(--dtwh-ink) !important;
+    letter-spacing: -0.025em;
+}
+h1 {
+    font-size: clamp(1.65rem, 2.5vw, 2.15rem) !important;
+    font-weight: 750 !important;
+}
+h3 {
+    font-size: 1.15rem !important;
+    font-weight: 680 !important;
+}
+[data-testid="stMetric"] {
+    background: var(--dtwh-card);
+    border: 1px solid var(--dtwh-border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 14px rgba(18, 43, 75, 0.055);
+    min-height: 118px;
+}
+[data-testid="stMetricLabel"] p {
+    color: var(--dtwh-muted) !important;
+    font-size: 0.91rem !important;
+    font-weight: 650 !important;
+}
+[data-testid="stMetricValue"] {
+    color: var(--dtwh-ink) !important;
+    font-size: clamp(1.35rem, 1.9vw, 2rem) !important;
+    font-weight: 750 !important;
+}
+[data-testid="stWidgetLabel"] p,
+label[data-testid="stWidgetLabel"] p {
+    color: var(--dtwh-text) !important;
+    font-size: 0.93rem !important;
+    font-weight: 650 !important;
+}
+[data-baseweb="select"] > div {
+    background: #FFFFFF !important;
+    border: 1px solid #C7D5E4 !important;
+    border-radius: 9px !important;
+}
+[data-testid="stPlotlyChart"] {
+    background: #FFFFFF;
+    border: 1px solid var(--dtwh-border);
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 0 3px 12px rgba(18, 43, 75, 0.035);
+}
+[data-testid="stCaptionContainer"] p {
+    color: var(--dtwh-muted) !important;
+    line-height: 1.55 !important;
+}
+[data-testid="stHorizontalBlock"] {
+    row-gap: 1rem;
+}
+[data-testid="stExpander"] {
+    border: 1px solid var(--dtwh-border);
+    border-radius: 11px;
+}
+hr {
+    border-color: var(--dtwh-border) !important;
+}
+@media (max-width: 768px) {
+    .block-container {
+        padding: 1.25rem 0.85rem 2rem;
+    }
+    [data-testid="stMetric"] {
+        min-height: 105px;
+        padding: 14px;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 def fmt(value, digits=2, suffix=""):
     if value is None or pd.isna(value):
@@ -57,22 +139,39 @@ def bar_chart(df, x, y, title, order=None):
         df,
         x=x,
         y=y,
+        color_discrete_sequence=["#116DA6"],
         hover_data=[
-            c for c in ["total_records", "target_1"]
+            c for c in ["total_records", "target_1", "customers"]
             if c in df.columns
         ],
         category_orders={x: order} if order else None
     )
-
-    fig.update_layout(
-        height=340,
-        margin=dict(l=10, r=10, t=20, b=30),
-        xaxis_title=None,
-        yaxis_title="Tỷ lệ (%)",
-        showlegend=False
+    fig.update_traces(
+        marker_line_width=0,
+        hovertemplate="%{x}<br>%{y:.2f}%<extra></extra>"
     )
-
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_layout(
+        template="plotly_white",
+        height=365,
+        margin=dict(l=14, r=14, t=18, b=46),
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
+        font=dict(family="Arial, sans-serif", size=13, color="#34445B"),
+        xaxis=dict(title=None, showgrid=False, tickfont=dict(size=11)),
+        yaxis=dict(
+            title="Tỷ lệ (%)",
+            gridcolor="#E8EEF5",
+            zeroline=False,
+            ticksuffix="%"
+        ),
+        showlegend=False,
+        bargap=0.28
+    )
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displaylogo": False}
+    )
 
 
 def cohort_condition(alias, contracts, late_only):
@@ -137,11 +236,17 @@ with st.sidebar:
 
 def dashboard_application():
     st.title("Giám sát rủi ro hồ sơ tiếp nhận")
-    st.caption(
-        "TARGET là nhãn lịch sử, không phải kết quả dự báo."
+    st.markdown(
+        "**Dashboard 01** · Tổng quan hồ sơ vay và các chỉ số rủi ro tín dụng"
     )
+    st.caption(
+        "Nguồn: Home Credit · TARGET là nhãn lịch sử, không phải dự báo."
+    )
+    st.divider()
+    st.markdown("### Bộ lọc hồ sơ")
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3 = st.columns(3, gap="medium")
+    c4, c5 = st.columns(2, gap="medium")
 
     contracts_all = query(con, """
         SELECT DISTINCT NAME_CONTRACT_TYPE
@@ -249,6 +354,7 @@ def dashboard_application():
         WHERE {where_sql}
     """, params).iloc[0]
 
+    st.markdown("### Tổng quan danh mục hồ sơ")
     a, b, c, d = st.columns(4)
 
     metric(
@@ -296,6 +402,8 @@ def dashboard_application():
             "Độ bao phủ nhãn",
             fmt(coverage, 2, "%")
         )
+
+    st.markdown("### Phân tích tỷ lệ TARGET = 1")
 
     labeled_where = (
         f"({where_sql}) AND TARGET IS NOT NULL"
@@ -445,7 +553,15 @@ def dashboard_application():
             composition,
             names="NAME_CONTRACT_TYPE",
             values="records",
-            hole=0.45
+            hole=0.52,
+            color_discrete_sequence=["#116DA6", "#16A6A0", "#90B8D8"]
+        )
+        fig.update_layout(
+            template="plotly_white",
+            height=350,
+            paper_bgcolor="#FFFFFF",
+            font=dict(color="#34445B", size=13),
+            margin=dict(l=10, r=10, t=10, b=10)
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -459,10 +575,14 @@ def dashboard_application():
 
 def dashboard_history():
     st.title("Lịch sử tín dụng và hành vi thanh toán")
-    st.caption(
-        "Dữ liệu đã được tổng hợp theo khách hàng "
-        "và cửa sổ lịch sử trên Google Colab."
+    st.markdown(
+        "**Dashboard 02** · Theo dõi kỳ thanh toán, hợp đồng cũ và tín dụng ngoài"
     )
+    st.caption(
+        "Dữ liệu tổng hợp theo khách hàng và cửa sổ lịch sử trên Google Colab."
+    )
+    st.divider()
+    st.markdown("### Bộ lọc lịch sử")
 
     f1, f2, f3 = st.columns(3)
 
@@ -522,6 +642,7 @@ def dashboard_history():
         if inst.customers else None
     )
 
+    st.markdown("### Chất lượng thanh toán")
     a, b, c, d = st.columns(4)
 
     metric(
@@ -776,7 +897,20 @@ def dashboard_history():
                 }
             )
 
-            fig.update_layout(height=380)
+            fig.update_traces(
+                line=dict(color="#116DA6", width=2.8),
+                marker=dict(size=6)
+            )
+            fig.update_layout(
+                template="plotly_white",
+                height=380,
+                paper_bgcolor="#FFFFFF",
+                plot_bgcolor="#FFFFFF",
+                font=dict(color="#34445B", size=13),
+                xaxis=dict(showgrid=False),
+                yaxis=dict(gridcolor="#E8EEF5", ticksuffix="%"),
+                margin=dict(l=14, r=14, t=16, b=28)
+            )
             st.plotly_chart(
                 fig, use_container_width=True
             )
