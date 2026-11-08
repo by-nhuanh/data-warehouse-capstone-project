@@ -1,175 +1,811 @@
-import os
 from pathlib import Path
-import streamlit as st
+import pandas as pd
 import plotly.express as px
-from data_access import connect,query,application_sql,PERIOD_SQL
+import streamlit as st
 
-st.set_page_config(page_title='Home Credit • Giám sát rủi ro',layout='wide')
-st.markdown('<style>.block-container{padding-top:1.5rem}div[data-testid="stMetric"]{background:#f4f6f8;padding:16px;border:1px solid #dae0e6;border-radius:6px}</style>',unsafe_allow_html=True)
-# Thu muc goc cua repository tren Streamlit Cloud
-root = Path(__file__).resolve().parents[2]
-page=st.sidebar.radio('Màn hình',['Hồ sơ tiếp nhận','Lịch sử tín dụng'])
-@st.cache_resource
-def source(root): return connect(root)
-try: c,available=source(root)
-except Exception as e: st.error(f'Không mở được nguồn dữ liệu: {e}'); st.stop()
-st.sidebar.caption('Database gốc chỉ đọc • Không ghi dữ liệu')
-with st.sidebar.expander('Tình trạng nguồn'):
- st.json(available)
-missing=[k for k,v in available.items() if v['status']=='MISSING']
-if missing: st.warning('Nguồn chưa có trong bộ tệp: '+', '.join(missing)+'. Các khối phụ thuộc sẽ không hiển thị số liệu.')
-def ready(*names): return all(available.get(n,{}).get('status')=='READY' for n in names)
-def metric(col,label,value,detail=''):
- col.metric(label,value); col.caption(detail)
-def fmt(v,suffix=''):
- return 'N/A' if v is None or __import__('pandas').isna(v) else f'{v:,.2f}{suffix}'
-def chart(df,x,y,title,kind='bar'):
- st.subheader(title)
- if df.empty: st.info('Không có dữ liệu phù hợp bộ lọc.'); return
- fig=(px.line(df,x=x,y=y,markers=True) if kind=='line' else px.bar(df,x=x,y=y,hover_data=list(df.columns)))
- fig.update_layout(height=270,margin=dict(l=10,r=10,t=10,b=10),showlegend=False)
- st.plotly_chart(fig,width='stretch')
+from data_access import connect, query, scalar
 
-def risk():
- st.title('Giám sát rủi ro hồ sơ tiếp nhận')
- if not ready('application_train'): st.error('Thiếu application_train'); return
- # Data are read from the actual supplied Bronze; no synthetic rows or imputation.
- app=application_sql(available)
- filters=st.columns(5)
- contract=filters[0].multiselect('Loại hợp đồng',query(c,f'select distinct NAME_CONTRACT_TYPE from ({app}) order by 1').iloc[:,0].dropna().tolist())
- ages=filters[1].multiselect('Nhóm tuổi',['<20','20–30','30–40','40–50','50–60','>60'])
- edu=filters[2].multiselect('Học vấn',query(c,f'select distinct NAME_EDUCATION_TYPE from ({app}) order by 1').iloc[:,0].dropna().tolist())
- income=filters[3].slider('Phân vị thu nhập (%)',0,100,(0,100))
- dataset=filters[4].selectbox('Tập dữ liệu',['Tất cả','Train','Test'])
- q=f"select *, -DAYS_BIRTH/365.25 age, case when AMT_INCOME_TOTAL>0 then AMT_CREDIT/AMT_INCOME_TOTAL end cti,case when AMT_GOODS_PRICE>0 then AMT_CREDIT/AMT_GOODS_PRICE end cg,case when AMT_INCOME_TOTAL>0 then AMT_ANNUITY/AMT_INCOME_TOTAL end dti from ({app}) where SK_ID_CURR is not null"
- q=f"select *,case when age<20 then '<20' when age<=30 then '20–30' when age<=40 then '30–40' when age<=50 then '40–50' when age<=60 then '50–60' else '>60' end age_group from ({q})"
- params=[]; conditions=[]
- for field,values in [('NAME_CONTRACT_TYPE',contract),('age_group',ages),('NAME_EDUCATION_TYPE',edu)]:
-  if values: conditions.append(field+' in ('+','.join('?' for _ in values)+')'); params+=values
- if dataset!='Tất cả': conditions.append('dataset=?'); params.append(dataset)
- if income!=(0,100):
-  lo,hi=c.execute(f'select quantile_cont(AMT_INCOME_TOTAL,{income[0]/100}),quantile_cont(AMT_INCOME_TOTAL,{income[1]/100}) from ({app}) where AMT_INCOME_TOTAL>0').fetchone()
-  conditions.append('AMT_INCOME_TOTAL between ? and ?'); params += [lo,hi]
- if conditions: q='select * from ('+q+') where '+' and '.join(conditions)
- df=query(c,q,params)
- n=len(df); labeled=df[df.TARGET.isin([0,1])]
- cols=st.columns(4)
- metric(cols[0],'01 · Tổng hồ sơ',f'{n:,}',f"Train: {(df.dataset=='Train').sum():,} • Test: {(df.dataset=='Test').sum():,}")
- metric(cols[1],'02 · Tỷ lệ TARGET = 1',fmt(labeled.TARGET.mean()*100,'%'),f'{int(labeled.TARGET.sum()):,} / {len(labeled):,} có nhãn')
- metric(cols[2],'03 · CTI trung vị',fmt(df.cti.median(),' lần'))
- metric(cols[3],'04 · Credit/Goods trung vị',fmt(df.cg.median(),' lần'))
- import pandas as pd
- labeled=labeled.copy(); labeled['cg_group']=pd.cut(labeled.cg,[-float('inf'),.5,.8,1,1.2,1.5,float('inf')],labels=['≤0.5','0.5–0.8','0.8–1','1–1.2','1.2–1.5','>1.5'])
- def rates(frame,group):
-  r=frame.groupby(group,observed=True).TARGET.agg(['mean','count']).reset_index();r['Tỷ lệ (%)']=r['mean']*100;return r
- a,b=st.columns(2)
- with a: chart(rates(labeled,'cg_group'),'cg_group','Tỷ lệ (%)','05 · TARGET = 1 theo Credit/Goods')
- with b: chart(rates(labeled,'age_group'),'age_group','Tỷ lệ (%)','06 · TARGET = 1 theo tuổi')
- a,b,d=st.columns(3)
- with a:
-  st.subheader('07 · Cơ cấu hợp đồng')
-  counts=df.groupby('NAME_CONTRACT_TYPE',dropna=False).size().reset_index(name='Hồ sơ')
-  if n: st.plotly_chart(px.pie(counts,names='NAME_CONTRACT_TYPE',values='Hồ sơ'),width='stretch')
-  st.dataframe(rates(labeled,'NAME_CONTRACT_TYPE'),hide_index=True)
- with b:
-  st.subheader('08 · Gánh nặng trả góp')
-  st.metric('DTI trung vị',fmt(df.dti.median()*100,'%'))
-  st.plotly_chart(px.box(df,x='dti',points=False),width='stretch')
- with d:
-  st.subheader('09 · Bao phủ nhãn')
-  st.metric('Hồ sơ có nhãn',fmt(len(labeled)/n*100 if n else None,'%'))
-  st.progress(len(labeled)/n if n else 0); st.caption(f'{len(labeled):,} / {n:,}')
- st.caption('TARGET phản ánh nhãn lịch sử; không phải dự báo. Không diễn giải quan hệ nhân quả. Tuổi = −DAYS_BIRTH/365.25. Phân vị thu nhập tính trên nguồn trước các bộ lọc khác.')
- if not ready('application_test'): st.info('Tổng hiện tại chỉ bao gồm Train; chưa thể nghiệm thu chỉ số tổng Train + Test và độ bao phủ nhãn toàn bộ.')
- st.download_button('Xuất hồ sơ đang lọc',df.to_csv(index=False).encode(), 'ho_so_filtered.csv','text/csv')
+st.set_page_config(
+    page_title="DTWH | Home Credit Risk",
+    page_icon="📊",
+    layout="wide"
+)
 
-def history():
- st.title('Lịch sử tín dụng và hành vi thanh toán')
- f=st.columns(4)
- window=f[0].selectbox('Cửa sổ lịch sử',['Toàn bộ','6 tháng','12 tháng'])
- contracts=f[1].multiselect('Loại hợp đồng cũ',query(c,'select distinct NAME_CONTRACT_TYPE from previous_application order by 1').iloc[:,0].dropna().tolist() if ready('previous_application') else [])
- statuses=f[2].multiselect('Trạng thái CIC',['0','1','2','3','4','5','C','X'])
- late=f[3].checkbox('Chỉ khách từng trả trễ',disabled=not ready('installments_payments'))
- months={'Toàn bộ':None,'6 tháng':6,'12 tháng':12}[window]
- st.caption('Cửa sổ áp dụng ngày tương đối cho thanh toán/đơn cũ và MONTHS_BALANCE cho CIC/thẻ. Loại hợp đồng cũ xác định tập khách hàng; trạng thái CIC chỉ lọc biểu đồ CIC. Không quy đổi ngày tương đối thành lịch thực.')
- cohort='select distinct SK_ID_CURR from previous_application'
- cp=[]
- if contracts: cohort+=' where NAME_CONTRACT_TYPE in ('+','.join('?' for _ in contracts)+')';cp+=contracts
- if late:
-  cohort=f'select SK_ID_CURR from ({cohort}) intersect select SK_ID_CURR from installments_payments where DAYS_ENTRY_PAYMENT>DAYS_INSTALMENT'
- restriction=f' SK_ID_CURR in ({cohort})' if ready('previous_application') and (contracts or late) else 'true'
- cols=st.columns(4)
- if ready('installments_payments'):
-  period='select * from ('+PERIOD_SQL+') where '+restriction
-  # Relative due-date filtering is applied before period aggregation, via source CTE.
-  if months:
-   period='with installments_payments as (select * from installments_payments where DAYS_INSTALMENT between ? and 0) '+period
-   pp=[-months*30]+cp
-  else: pp=cp
-  p=query(c,period,pp); valid=p[(p.valid_dates==p.rows_count)&p.delta.notna()]
-  metric(cols[0],'01 · Kỳ trả trễ',fmt((valid.delta>0).mean()*100,'%'),f'{(valid.delta>0).sum():,} / {len(valid):,} kỳ đủ ngày')
-  cust=p.groupby('SK_ID_CURR').delta.max()
-  metric(cols[1],'02 · Khách từng trả trễ',fmt((cust>0).mean()*100,'%'),f'{(cust>0).sum():,} / {len(cust):,} khách')
-  metric(cols[2],'03 · Tiền thiếu hụt',fmt(p.shortfall.sum(min_count=1)/1e6,' triệu đơn vị nguồn'),f'{(p.shortfall>0).sum():,} kỳ thiếu')
- else:
-  p=None
-  for col,label in zip(cols[:3],['01 · Kỳ trả trễ','02 · Khách từng trả trễ','03 · Tiền thiếu hụt']): metric(col,label,'N/A','Thiếu installments_payments')
- if ready('previous_application'):
-  sql='select count(*) n,count(*) filter(where NAME_CONTRACT_STATUS=\'Approved\') approved from previous_application where '+restriction
-  args=cp.copy()
-  if months: sql+=' and TRY_CAST(DAYS_DECISION AS INTEGER) between ? and 0';args += [-months*30]
-  r=query(c,sql,args).iloc[0];metric(cols[3],'04 · Phê duyệt đơn cũ',fmt(r.approved/r.n*100 if r.n else None,'%'),f'{r.approved:,} / {r.n:,}')
- a,b=st.columns(2)
- with a:
-  if ready('installments_payments'):
-   sql='select DAYS_ENTRY_PAYMENT-DAYS_INSTALMENT delta from installments_payments where DAYS_ENTRY_PAYMENT is not null and DAYS_INSTALMENT is not null and '+restriction
-   args=cp.copy()
-   if months: sql+=' and DAYS_INSTALMENT between ? and 0';args += [-months*30]
-   tx=query(c,sql,args);tx['Nhóm']=tx.delta.map(lambda x:'Trả sớm' if x<0 else 'Đúng hạn' if x==0 else 'Trả trễ')
-   dist=tx.groupby('Nhóm').size().reset_index(name='Giao dịch');dist['Tỷ trọng (%)']=dist['Giao dịch']/len(tx)*100
-   chart(dist,'Nhóm','Tỷ trọng (%)','05 · Kỷ luật thanh toán')
-   st.caption('Phân vị ngày lệch: '+str(tx.delta.quantile([.5,.95,.99]).to_dict()))
-  else: st.subheader('05 · Kỷ luật thanh toán');st.info('Chưa có nguồn thanh toán.')
- with b:
-  if ready('bureau_balance','bureau'):
-   wh=('b.SK_ID_CURR in ('+cohort+')' if contracts or late else 'true');args=cp.copy()
-   if months: wh+=' and bb.MONTHS_BALANCE between ? and 0';args +=[-months+1]
-   if statuses: wh+=' and cast(bb.STATUS as varchar) in ('+','.join('?' for _ in statuses)+')';args+=statuses
-   cic=query(c,"select bb.MONTHS_BALANCE,100.0*count(*) filter(where cast(bb.STATUS as varchar) in ('1','2','3','4','5'))/nullif(count(*) filter(where cast(bb.STATUS as varchar) in ('0','1','2','3','4','5')),0) rate,count(*) n from bureau_balance bb join bureau b using(SK_ID_BUREAU) where "+wh+' group by 1 order by 1',args)
-   chart(cic,'MONTHS_BALANCE','rate','06 · Quá hạn CIC (%)','line');st.caption('Mẫu số chỉ gồm trạng thái 0–5; C/X giữ riêng, không coi là 0. Bản ghi không ghép Bureau không tham gia tập khách hàng.')
- a,b,d=st.columns(3)
- with a:
-  st.subheader('07 · TARGET theo mức dùng thẻ')
-  if ready('credit_card_balance','application_train'):
-   wh='AMT_CREDIT_LIMIT_ACTUAL>0 and '+restriction;args=cp.copy()
-   if months: wh+=' and MONTHS_BALANCE between ? and 0';args +=[-months+1]
-   cc=query(c,'select SK_ID_CURR,avg(AMT_BALANCE/AMT_CREDIT_LIMIT_ACTUAL) utilization from credit_card_balance where '+wh+' group by 1',args)
-   high_utilization=(cc.utilization>.8).mean()*100
-   labels=query(c,'select SK_ID_CURR,TARGET from application_train');cc=cc.merge(labels,on='SK_ID_CURR',validate='one_to_one')
-   import pandas as pd
-   cc['Nhóm']=pd.cut(cc.utilization,[-float('inf'),0,.3,.5,.8,1,float('inf')],labels=['≤0','0–30%','30–50%','50–80%','80–100%','>100%'])
-   rr=cc.groupby('Nhóm',observed=True).TARGET.agg(['mean','count']).reset_index();rr['Tỷ lệ (%)']=rr['mean']*100
-   st.plotly_chart(px.bar(rr,x='Nhóm',y='Tỷ lệ (%)',hover_data=['count']),width='stretch')
- with b:
-  st.subheader('08 · Cảnh báo sớm')
-  st.caption('Ngưỡng dùng thẻ >80% lấy từ wireframe; chưa được xác nhận là ngưỡng chính sách.')
-  if 'cc' in locals(): st.metric('Khách dùng thẻ TB >80%',fmt(high_utilization,'%'))
-  if ready('bureau'):
-   debt=query(c,'select sum(TRY_CAST(AMT_CREDIT_SUM_DEBT AS DECIMAL(20,4))) debt from bureau where '+restriction,cp).iloc[0,0]
-   st.metric('Dư nợ ngoài',fmt(debt/1e9,' tỷ đơn vị nguồn'))
-  if ready('installments_payments'): st.metric('Ngày lệch trung vị',fmt(tx.delta.median(),' ngày'))
-  st.caption('CIC hiện tại: chưa xác nhận quy ước tháng hiện tại nghiệp vụ; không suy đoán từ tháng gần nhất.')
- with d:
-  st.subheader('09 · Hợp đồng cần nhắc nợ')
-  if p is not None:
-   reminders=p[(p.delta>0)&(p.shortfall>0)].sort_values('shortfall',ascending=False)
-   st.dataframe(reminders.head(100),hide_index=True)
-   st.download_button('Xuất danh sách nhắc nợ',reminders.to_csv(index=False).encode(),'nhac_no.csv','text/csv')
-  else: st.info('Thiếu dữ liệu kỳ trả; chưa thể lập danh sách.')
- st.caption('Đơn vị tiền tệ Home Credit chưa được xác nhận là VNĐ; chỉ hiển thị theo đơn vị nguồn. DPD ở đây là độ trễ lịch sử thanh toán, không phải số ngày quá hạn tại ngày chạy.')
+ROOT = Path(__file__).resolve().parents[2]
+
+st.markdown("""
+<style>
+.block-container {
+    padding-top: 1.4rem;
+    padding-bottom: 2rem;
+}
+div[data-testid="stMetric"] {
+    padding: 16px;
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+def fmt(value, digits=2, suffix=""):
+    if value is None or pd.isna(value):
+        return "N/A"
+    return f"{float(value):,.{digits}f}{suffix}"
+
+
+def number(value):
+    if value is None or pd.isna(value):
+        return "0"
+    return f"{int(value):,}"
+
+
+def metric(col, title, value, caption=None):
+    col.metric(title, value)
+    if caption:
+        col.caption(caption)
+
+
+def bar_chart(df, x, y, title, order=None):
+    st.subheader(title)
+
+    if df.empty:
+        st.info("Không có dữ liệu phù hợp bộ lọc.")
+        return
+
+    fig = px.bar(
+        df,
+        x=x,
+        y=y,
+        hover_data=[
+            c for c in ["total_records", "target_1"]
+            if c in df.columns
+        ],
+        category_orders={x: order} if order else None
+    )
+
+    fig.update_layout(
+        height=340,
+        margin=dict(l=10, r=10, t=20, b=30),
+        xaxis_title=None,
+        yaxis_title="Tỷ lệ (%)",
+        showlegend=False
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def cohort_condition(alias, contracts, late_only):
+    clauses = []
+    params = []
+
+    if contracts:
+        placeholders = ",".join("?" for _ in contracts)
+        clauses.append(f"""
+            EXISTS (
+                SELECT 1
+                FROM previous_contract_bridge b
+                WHERE b.SK_ID_CURR = {alias}.SK_ID_CURR
+                AND b.NAME_CONTRACT_TYPE IN ({placeholders})
+            )
+        """)
+        params.extend(contracts)
+
+    if late_only:
+        clauses.append(f"""
+            EXISTS (
+                SELECT 1
+                FROM installments_customer_window h
+                WHERE h.SK_ID_CURR = {alias}.SK_ID_CURR
+                AND h.window_months = 0
+                AND h.max_delta > 0
+            )
+        """)
+
+    if not clauses:
+        return "TRUE", []
+
+    return " AND ".join(clauses), params
+
+
 try:
- if page=='Hồ sơ tiếp nhận': risk()
- else: history()
-except Exception as e:
- st.error(f'Truy vấn chưa hoàn tất: {type(e).__name__}: {e}')
- st.stop()
+    con, sources = connect(ROOT)
+except Exception as exc:
+    st.error(f"Không đọc được BI Serving: {exc}")
+    st.stop()
+
+with st.sidebar:
+    st.title("DTWH")
+    st.caption("Home Credit Data Lakehouse")
+
+    page = st.radio(
+        "Dashboard",
+        [
+            "1. Hồ sơ tiếp nhận",
+            "2. Lịch sử tín dụng"
+        ]
+    )
+
+    with st.expander("Trạng thái dữ liệu"):
+        st.json(sources)
+
+    st.caption(
+        "Dữ liệu được xử lý trên Colab và "
+        "xuất thành BI Serving Parquet."
+    )
+
+
+def dashboard_application():
+    st.title("Giám sát rủi ro hồ sơ tiếp nhận")
+    st.caption(
+        "TARGET là nhãn lịch sử, không phải kết quả dự báo."
+    )
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+
+    contracts_all = query(con, """
+        SELECT DISTINCT NAME_CONTRACT_TYPE
+        FROM application_dashboard
+        WHERE NAME_CONTRACT_TYPE IS NOT NULL
+        ORDER BY 1
+    """).iloc[:, 0].tolist()
+
+    education_all = query(con, """
+        SELECT DISTINCT NAME_EDUCATION_TYPE
+        FROM application_dashboard
+        WHERE NAME_EDUCATION_TYPE IS NOT NULL
+        ORDER BY 1
+    """).iloc[:, 0].tolist()
+
+    contract = c1.multiselect(
+        "Loại hợp đồng", contracts_all
+    )
+
+    age = c2.multiselect(
+        "Nhóm tuổi",
+        ["<20", "20-30", "30-40", "40-50", "50-60", ">60"]
+    )
+
+    education = c3.multiselect(
+        "Học vấn", education_all
+    )
+
+    income_range = c4.slider(
+        "Phân vị thu nhập (%)",
+        0, 100, (0, 100)
+    )
+
+    dataset = c5.selectbox(
+        "Tập dữ liệu",
+        ["Tất cả", "Train", "Test"]
+    )
+
+    conditions = ["1=1"]
+    params = []
+
+    if contract:
+        conditions.append(
+            "NAME_CONTRACT_TYPE IN ("
+            + ",".join("?" for _ in contract) + ")"
+        )
+        params.extend(contract)
+
+    if age:
+        conditions.append(
+            "age_group IN ("
+            + ",".join("?" for _ in age) + ")"
+        )
+        params.extend(age)
+
+    if education:
+        conditions.append(
+            "NAME_EDUCATION_TYPE IN ("
+            + ",".join("?" for _ in education) + ")"
+        )
+        params.extend(education)
+
+    if dataset != "Tất cả":
+        conditions.append("dataset = ?")
+        params.append(dataset)
+
+    if income_range != (0, 100):
+        lo, hi = con.execute("""
+            SELECT
+                quantile_cont(AMT_INCOME_TOTAL, ?),
+                quantile_cont(AMT_INCOME_TOTAL, ?)
+            FROM application_dashboard
+            WHERE AMT_INCOME_TOTAL > 0
+        """, [
+            income_range[0] / 100,
+            income_range[1] / 100
+        ]).fetchone()
+
+        conditions.append(
+            "AMT_INCOME_TOTAL BETWEEN ? AND ?"
+        )
+        params.extend([lo, hi])
+
+    where_sql = " AND ".join(conditions)
+
+    overview = query(con, f"""
+        SELECT
+            COUNT(*) AS total_records,
+            COUNT(*) FILTER (
+                WHERE dataset = 'Train'
+            ) AS train_records,
+            COUNT(*) FILTER (
+                WHERE dataset = 'Test'
+            ) AS test_records,
+            COUNT(TARGET) AS labeled_records,
+            COUNT(*) FILTER (
+                WHERE TARGET = 1
+            ) AS target_1,
+            100.0 * AVG(TARGET) AS target_rate_pct,
+            MEDIAN(cti) AS median_cti,
+            MEDIAN(credit_goods) AS median_credit_goods,
+            100.0 * MEDIAN(dti) AS median_dti_pct,
+            COUNT(dti) AS valid_dti
+        FROM application_dashboard
+        WHERE {where_sql}
+    """, params).iloc[0]
+
+    a, b, c, d = st.columns(4)
+
+    metric(
+        a, "Tổng hồ sơ",
+        number(overview.total_records),
+        f"Train: {number(overview.train_records)} | "
+        f"Test: {number(overview.test_records)}"
+    )
+
+    metric(
+        b, "TARGET = 1",
+        fmt(overview.target_rate_pct, 2, "%"),
+        f"{number(overview.target_1)} / "
+        f"{number(overview.labeled_records)} có nhãn"
+    )
+
+    metric(
+        c, "CTI trung vị",
+        fmt(overview.median_cti, 4, " lần")
+    )
+
+    metric(
+        d, "Credit/Goods trung vị",
+        fmt(overview.median_credit_goods, 4, " lần")
+    )
+
+    a, b = st.columns(2)
+
+    with a:
+        st.metric(
+            "DTI trung vị",
+            fmt(overview.median_dti_pct, 2, "%")
+        )
+        st.caption(
+            f"Số DTI hợp lệ: {number(overview.valid_dti)}"
+        )
+
+    with b:
+        coverage = (
+            100 * overview.labeled_records
+            / overview.total_records
+            if overview.total_records else None
+        )
+        st.metric(
+            "Độ bao phủ nhãn",
+            fmt(coverage, 2, "%")
+        )
+
+    labeled_where = (
+        f"({where_sql}) AND TARGET IS NOT NULL"
+    )
+
+    if not overview.labeled_records:
+        st.info(
+            "Bộ lọc hiện tại không có hồ sơ mang nhãn TARGET."
+        )
+    else:
+        group_specs = [
+            (
+                "cg_group",
+                """CASE
+                    WHEN credit_goods IS NULL
+                        THEN 'Không hợp lệ'
+                    WHEN credit_goods <= 0.5 THEN '<=0.5'
+                    WHEN credit_goods <= 0.8 THEN '0.5-0.8'
+                    WHEN credit_goods <= 1 THEN '0.8-1'
+                    WHEN credit_goods <= 1.2 THEN '1-1.2'
+                    WHEN credit_goods <= 1.5 THEN '1.2-1.5'
+                    ELSE '>1.5'
+                END""",
+                "TARGET theo Credit/Goods",
+                ["<=0.5", "0.5-0.8", "0.8-1",
+                 "1-1.2", "1.2-1.5", ">1.5",
+                 "Không hợp lệ"]
+            ),
+            (
+                "age_group",
+                "age_group",
+                "TARGET theo nhóm tuổi",
+                ["<20", "20-30", "30-40",
+                 "40-50", "50-60", ">60"]
+            ),
+            (
+                "NAME_CONTRACT_TYPE",
+                "NAME_CONTRACT_TYPE",
+                "TARGET theo loại hợp đồng",
+                None
+            ),
+            (
+                "NAME_EDUCATION_TYPE",
+                "NAME_EDUCATION_TYPE",
+                "TARGET theo học vấn",
+                None
+            )
+        ]
+
+        for start in (0, 2):
+            left, right = st.columns(2)
+
+            for col, spec in zip(
+                [left, right],
+                group_specs[start:start + 2]
+            ):
+                field, expr, title, order = spec
+
+                grouped = query(con, f"""
+                    SELECT
+                        {expr} AS group_name,
+                        COUNT(*) AS total_records,
+                        SUM(TARGET) AS target_1,
+                        100.0 * AVG(TARGET) AS rate
+                    FROM application_dashboard
+                    WHERE {labeled_where}
+                    GROUP BY 1
+                    ORDER BY 1
+                """, params)
+
+                with col:
+                    bar_chart(
+                        grouped, "group_name", "rate",
+                        title, order
+                    )
+
+        thresholds = con.execute("""
+            SELECT
+                quantile_cont(AMT_INCOME_TOTAL, 0.2),
+                quantile_cont(AMT_INCOME_TOTAL, 0.4),
+                quantile_cont(AMT_INCOME_TOTAL, 0.6),
+                quantile_cont(AMT_INCOME_TOTAL, 0.8)
+            FROM application_dashboard
+            WHERE dataset = 'Train'
+              AND AMT_INCOME_TOTAL > 0
+              AND isfinite(AMT_INCOME_TOTAL)
+        """).fetchone()
+
+        t1, t2, t3, t4 = thresholds
+
+        income_groups = query(con, f"""
+            SELECT
+                CASE
+                    WHEN AMT_INCOME_TOTAL IS NULL
+                      OR AMT_INCOME_TOTAL <= 0
+                        THEN '00. Không hợp lệ'
+                    WHEN AMT_INCOME_TOTAL <= ?
+                        THEN '01. Nhóm 1'
+                    WHEN AMT_INCOME_TOTAL <= ?
+                        THEN '02. Nhóm 2'
+                    WHEN AMT_INCOME_TOTAL <= ?
+                        THEN '03. Nhóm 3'
+                    WHEN AMT_INCOME_TOTAL <= ?
+                        THEN '04. Nhóm 4'
+                    ELSE '05. Nhóm 5'
+                END AS income_group,
+                COUNT(*) AS total_records,
+                SUM(TARGET) AS target_1,
+                100.0 * AVG(TARGET) AS rate
+            FROM application_dashboard
+            WHERE {labeled_where}
+            GROUP BY 1
+            ORDER BY 1
+        """, [t1, t2, t3, t4] + params)
+
+        bar_chart(
+            income_groups,
+            "income_group",
+            "rate",
+            "TARGET = 1 theo nhóm thu nhập"
+        )
+
+        st.caption(
+            f"Ngưỡng thu nhập Train: "
+            f"{fmt(t1, 0)}, {fmt(t2, 0)}, "
+            f"{fmt(t3, 0)}, {fmt(t4, 0)}. "
+            "Ngưỡng cố định theo Train; tỷ lệ được "
+            "tính lại theo các bộ lọc hiện tại."
+        )
+
+    st.divider()
+
+    st.subheader("Cơ cấu hồ sơ")
+
+    composition = query(con, f"""
+        SELECT
+            NAME_CONTRACT_TYPE,
+            COUNT(*) AS records
+        FROM application_dashboard
+        WHERE {where_sql}
+        GROUP BY 1
+        ORDER BY 2 DESC
+    """, params)
+
+    if not composition.empty:
+        fig = px.pie(
+            composition,
+            names="NAME_CONTRACT_TYPE",
+            values="records",
+            hole=0.45
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.caption(
+        "Tỷ lệ TARGET luôn chỉ tính trên hồ sơ có nhãn. "
+        "CTI = Credit/Income; Credit/Goods = Credit/Goods Price; "
+        "DTI = Annuity/Income. Các trung vị tính trên "
+        "hồ sơ đang được lọc."
+    )
+
+
+def dashboard_history():
+    st.title("Lịch sử tín dụng và hành vi thanh toán")
+    st.caption(
+        "Dữ liệu đã được tổng hợp theo khách hàng "
+        "và cửa sổ lịch sử trên Google Colab."
+    )
+
+    f1, f2, f3 = st.columns(3)
+
+    window_label = f1.selectbox(
+        "Cửa sổ lịch sử",
+        ["Toàn bộ", "6 tháng", "12 tháng"]
+    )
+
+    months = {
+        "Toàn bộ": 0,
+        "6 tháng": 6,
+        "12 tháng": 12
+    }[window_label]
+
+    contract_options = query(con, """
+        SELECT DISTINCT NAME_CONTRACT_TYPE
+        FROM previous_contract_bridge
+        WHERE NAME_CONTRACT_TYPE IS NOT NULL
+        ORDER BY 1
+    """).iloc[:, 0].tolist()
+
+    contracts = f2.multiselect(
+        "Loại hợp đồng cũ",
+        contract_options
+    )
+
+    late_only = f3.checkbox(
+        "Chỉ khách từng có kỳ trễ"
+    )
+
+    inst_filter, inst_params = cohort_condition(
+        "i", contracts, late_only
+    )
+
+    inst = query(con, f"""
+        SELECT
+            COUNT(*) AS customers,
+            COALESCE(SUM(i.periods), 0) AS periods,
+            COALESCE(SUM(i.valid_periods), 0) AS valid_periods,
+            COALESCE(SUM(i.late_periods), 0) AS late_periods,
+            COUNT(*) FILTER (
+                WHERE i.max_delta > 0
+            ) AS customers_ever_late,
+            COALESCE(SUM(i.shortfall_sum), 0) AS shortfall
+        FROM installments_customer_window i
+        WHERE i.window_months = ?
+          AND {inst_filter}
+    """, [months] + inst_params).iloc[0]
+
+    late_rate = (
+        100 * inst.late_periods / inst.valid_periods
+        if inst.valid_periods else None
+    )
+
+    customer_late_rate = (
+        100 * inst.customers_ever_late / inst.customers
+        if inst.customers else None
+    )
+
+    a, b, c, d = st.columns(4)
+
+    metric(
+        a, "Kỳ trả trễ",
+        fmt(late_rate, 2, "%"),
+        f"{number(inst.late_periods)} / "
+        f"{number(inst.valid_periods)} kỳ đủ dữ liệu"
+    )
+
+    metric(
+        b, "Khách từng có kỳ trễ",
+        fmt(customer_late_rate, 2, "%"),
+        f"{number(inst.customers_ever_late)} / "
+        f"{number(inst.customers)} khách"
+    )
+
+    metric(
+        c, "Tổng thiếu hụt",
+        fmt(inst.shortfall / 1e6, 2, " triệu"),
+        "Đơn vị tiền của nguồn Home Credit"
+    )
+
+    metric(
+        d, "Số kỳ trả góp",
+        number(inst.periods)
+    )
+
+    prev_filter, prev_params = cohort_condition(
+        "p", contracts, late_only
+    )
+
+    previous = query(con, f"""
+        SELECT
+            COALESCE(SUM(p.previous_applications), 0) AS total,
+            COALESCE(SUM(p.approved_applications), 0) AS approved
+        FROM previous_customer_window p
+        WHERE p.window_months = ?
+          AND {prev_filter}
+    """, [months] + prev_params).iloc[0]
+
+    approval_rate = (
+        100 * previous.approved / previous.total
+        if previous.total else None
+    )
+
+    st.metric(
+        "Tỷ lệ phê duyệt đơn cũ",
+        fmt(approval_rate, 2, "%")
+    )
+    st.caption(
+        f"{number(previous.approved)} / "
+        f"{number(previous.total)} đơn"
+    )
+
+    st.divider()
+
+    cc_filter, cc_params = cohort_condition(
+        "cc", contracts, late_only
+    )
+
+    cc_summary = query(con, f"""
+        SELECT
+            COUNT(*) AS customers,
+            COUNT(*) FILTER (
+                WHERE cc.utilization > 0.8
+            ) AS high_utilization,
+            AVG(cc.utilization) AS avg_utilization
+        FROM credit_card_customer_window cc
+        WHERE cc.window_months = ?
+          AND {cc_filter}
+    """, [months] + cc_params).iloc[0]
+
+    high_rate = (
+        100 * cc_summary.high_utilization
+        / cc_summary.customers
+        if cc_summary.customers else None
+    )
+
+    a, b = st.columns(2)
+
+    with a:
+        st.subheader("Sử dụng thẻ tín dụng")
+
+        st.metric(
+            "Khách dùng thẻ trung bình >80%",
+            fmt(high_rate, 2, "%")
+        )
+        st.caption(
+            f"{number(cc_summary.high_utilization)} / "
+            f"{number(cc_summary.customers)} khách"
+        )
+
+        card_groups = query(con, f"""
+            SELECT
+                CASE
+                    WHEN cc.utilization IS NULL
+                        THEN 'Không hợp lệ'
+                    WHEN cc.utilization <= 0
+                        THEN '<=0%'
+                    WHEN cc.utilization <= 0.3
+                        THEN '0-30%'
+                    WHEN cc.utilization <= 0.5
+                        THEN '30-50%'
+                    WHEN cc.utilization <= 0.8
+                        THEN '50-80%'
+                    WHEN cc.utilization <= 1
+                        THEN '80-100%'
+                    ELSE '>100%'
+                END AS usage_group,
+                COUNT(*) AS customers,
+                COUNT(a.TARGET) AS labeled_customers,
+                SUM(
+                    CASE WHEN a.TARGET = 1 THEN 1 ELSE 0 END
+                ) AS target_1,
+                100.0 * AVG(a.TARGET) AS rate
+            FROM credit_card_customer_window cc
+            LEFT JOIN application_dashboard a
+              ON a.SK_ID_CURR = cc.SK_ID_CURR
+             AND a.dataset = 'Train'
+            WHERE cc.window_months = ?
+              AND {cc_filter}
+            GROUP BY 1
+            ORDER BY 1
+        """, [months] + cc_params)
+
+        bar_chart(
+            card_groups[
+                card_groups.labeled_customers > 0
+            ],
+            "usage_group",
+            "rate",
+            "TARGET theo mức sử dụng thẻ",
+            [
+                "<=0%", "0-30%", "30-50%",
+                "50-80%", "80-100%", ">100%",
+                "Không hợp lệ"
+            ]
+        )
+
+        st.caption(
+            "Mức sử dụng thẻ là trung bình tỷ lệ "
+            "Balance/Credit Limit theo khách hàng. "
+            "TARGET chỉ dùng hồ sơ Train có nhãn."
+        )
+
+    with b:
+        st.subheader("Dư nợ bên ngoài")
+
+        debt_filter, debt_params = cohort_condition(
+            "b", contracts, late_only
+        )
+
+        debt = scalar(con, f"""
+            SELECT SUM(b.bureau_debt_sum)
+            FROM bureau_customer_debt b
+            WHERE {debt_filter}
+        """, debt_params)
+
+        st.metric(
+            "Tổng dư nợ Bureau",
+            fmt(
+                debt / 1e9 if debt is not None else None,
+                2,
+                " tỷ"
+            )
+        )
+
+        st.caption(
+            "Tổng dư nợ Bureau là dữ liệu "
+            "tổng hợp theo khách hàng, không phải "
+            "dư nợ tại ngày hiện tại."
+        )
+
+    st.divider()
+    st.subheader("Trạng thái Bureau theo tháng")
+
+    if contracts or late_only:
+        st.warning(
+            "Không hiển thị biểu đồ Bureau theo nhóm "
+            "khách hàng đang lọc: bảng BI hiện tại "
+            "chỉ tổng hợp theo tháng và trạng thái, "
+            "chưa lưu mã khách hàng."
+        )
+    else:
+        status_options = [
+            "0", "1", "2", "3", "4", "5", "C", "X"
+        ]
+
+        statuses = st.multiselect(
+            "Trạng thái Bureau",
+            status_options
+        )
+
+        conditions = ["1=1"]
+        args = []
+
+        if months:
+            conditions.append(
+                "MONTHS_BALANCE BETWEEN ? AND 0"
+            )
+            args.append(-months + 1)
+
+        if statuses:
+            conditions.append(
+                "STATUS IN ("
+                + ",".join("?" for _ in statuses) + ")"
+            )
+            args.extend(statuses)
+
+        bureau_where = " AND ".join(conditions)
+
+        bureau = query(con, f"""
+            SELECT
+                MONTHS_BALANCE,
+                SUM(
+                    CASE WHEN STATUS IN ('1','2','3','4','5')
+                    THEN records ELSE 0 END
+                ) AS late_records,
+                SUM(
+                    CASE WHEN STATUS IN ('0','1','2','3','4','5')
+                    THEN records ELSE 0 END
+                ) AS valid_records,
+                100.0 * SUM(
+                    CASE WHEN STATUS IN ('1','2','3','4','5')
+                    THEN records ELSE 0 END
+                ) / NULLIF(
+                    SUM(
+                        CASE WHEN STATUS IN
+                            ('0','1','2','3','4','5')
+                        THEN records ELSE 0 END
+                    ), 0
+                ) AS rate
+            FROM bureau_month_status
+            WHERE {bureau_where}
+            GROUP BY 1
+            ORDER BY 1
+        """, args)
+
+        bureau = bureau.dropna(subset=["rate"])
+
+        if bureau.empty:
+            st.info("Không có trạng thái 0–5 để tính tỷ lệ.")
+        else:
+            fig = px.line(
+                bureau,
+                x="MONTHS_BALANCE",
+                y="rate",
+                markers=True,
+                labels={
+                    "MONTHS_BALANCE": "Tháng tương đối",
+                    "rate": "Tỷ lệ (%)"
+                }
+            )
+
+            fig.update_layout(height=380)
+            st.plotly_chart(
+                fig, use_container_width=True
+            )
+
+        st.caption(
+            "Mẫu số chỉ bao gồm trạng thái 0–5. "
+            "C và X không được tính là không quá hạn. "
+            "Nếu chọn trạng thái, tỷ lệ được tính "
+            "trong tập trạng thái đã chọn."
+        )
+
+    st.divider()
+
+    st.info(
+        "Bản BI Serving không lưu giao dịch chi tiết, "
+        "nên chưa hỗ trợ danh sách nhắc nợ, "
+        "phân phối ngày lệch từng giao dịch hoặc "
+        "trung vị ngày lệch giao dịch. "
+        "Không suy diễn các chỉ số này từ dữ liệu tổng hợp."
+    )
+
+    st.caption(
+        "Cửa sổ 6/12 tháng sử dụng ngày và tháng tương đối "
+        "trong nguồn Home Credit. Không đại diện "
+        "cho 6/12 tháng lịch tính từ hôm nay."
+    )
+
+
+if page == "1. Hồ sơ tiếp nhận":
+    dashboard_application()
+else:
+    dashboard_history()
