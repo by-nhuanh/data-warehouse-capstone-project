@@ -1,4 +1,5 @@
 from pathlib import Path
+from html import escape
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -16,96 +17,92 @@ ROOT = Path(__file__).resolve().parents[2]
 st.markdown("""
 <style>
 :root {
-    --dtwh-bg: #F6F9FD;
-    --dtwh-card: #FFFFFF;
-    --dtwh-border: #D7E1EC;
-    --dtwh-ink: #14263E;
-    --dtwh-text: #34445B;
-    --dtwh-muted: #52647C;
-    --dtwh-blue: #116DA6;
+  --d-navy:#092B56; --d-navy2:#0F407A; --d-blue:#126EB1;
+  --d-text:#152B48; --d-muted:#516784; --d-border:#DCE7F4;
 }
 .stApp {
-    background: var(--dtwh-bg);
-    color: var(--dtwh-text);
+  background:linear-gradient(135deg,#F6FAFF 0%,#FFFFFF 55%,#F3F8FF 100%);
+  color:var(--d-text);
 }
-.block-container {
-    max-width: 1460px;
-    padding: 1.8rem 2.2rem 3rem;
-}
+.block-container {max-width:1580px;padding:1.65rem 2.1rem 3rem}
 [data-testid="stSidebar"] {
-    background: #FFFFFF;
-    border-right: 1px solid var(--dtwh-border);
+  background:linear-gradient(165deg,#092953 0%,#0D3A74 85%,#10539C 100%);
+  border-right:0;
 }
-h1, h2, h3 {
-    color: var(--dtwh-ink) !important;
-    letter-spacing: -0.025em;
+[data-testid="stSidebar"] * {color:#F3F8FF}
+[data-testid="stSidebar"] [data-testid="stRadio"] label,
+[data-testid="stSidebar"] [data-testid="stRadio"] p {color:#F3F8FF!important}
+[data-testid="stSidebar"] [role="radiogroup"] label {
+  border-radius:11px;padding:8px 10px;margin-bottom:4px;
 }
-h1 {
-    font-size: clamp(1.65rem, 2.5vw, 2.15rem) !important;
-    font-weight: 750 !important;
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked){
+  background:rgba(90,159,239,.33);
 }
-h3 {
-    font-size: 1.15rem !important;
-    font-weight: 680 !important;
+[data-testid="stSidebar"] [data-testid="stExpander"]{
+  border:1px solid rgba(224,239,255,.23);
+  border-radius:10px;
 }
-[data-testid="stMetric"] {
-    background: var(--dtwh-card);
-    border: 1px solid var(--dtwh-border);
-    border-radius: 14px;
-    padding: 18px 20px;
-    box-shadow: 0 4px 14px rgba(18, 43, 75, 0.055);
-    min-height: 118px;
+h1,h2,h3 {color:#0C2D59!important;letter-spacing:-.025em}
+h1 {font-size:clamp(1.65rem,2.2vw,2.2rem)!important;font-weight:750!important}
+h3 {font-size:1.14rem!important;font-weight:700!important}
+[data-testid="stWidgetLabel"] p {
+  font-weight:650!important;color:#263F60!important;font-size:.92rem!important;
 }
-[data-testid="stMetricLabel"] p {
-    color: var(--dtwh-muted) !important;
-    font-size: 0.91rem !important;
-    font-weight: 650 !important;
-}
-[data-testid="stMetricValue"] {
-    color: var(--dtwh-ink) !important;
-    font-size: clamp(1.35rem, 1.9vw, 2rem) !important;
-    font-weight: 750 !important;
-}
-[data-testid="stWidgetLabel"] p,
-label[data-testid="stWidgetLabel"] p {
-    color: var(--dtwh-text) !important;
-    font-size: 0.93rem !important;
-    font-weight: 650 !important;
-}
-[data-baseweb="select"] > div {
-    background: #FFFFFF !important;
-    border: 1px solid #C7D5E4 !important;
-    border-radius: 9px !important;
+[data-baseweb="select"]>div {
+  background:#FFFFFF!important;border:1px solid #BACDE3!important;
+  border-radius:9px!important;min-height:42px;
 }
 [data-testid="stPlotlyChart"] {
-    background: #FFFFFF;
-    border: 1px solid var(--dtwh-border);
-    border-radius: 14px;
-    padding: 10px;
-    box-shadow: 0 3px 12px rgba(18, 43, 75, 0.035);
+  background:#FFFFFF;
+  border:1px solid var(--d-border);
+  border-radius:14px;
+  padding:8px;
+  box-shadow:0 5px 17px rgba(12,51,95,.052);
 }
-[data-testid="stCaptionContainer"] p {
-    color: var(--dtwh-muted) !important;
-    line-height: 1.55 !important;
+[data-testid="stPlotlyChart"]>div{border-radius:11px}
+[data-testid="stCaptionContainer"] p{color:var(--d-muted)!important;line-height:1.5}
+[data-testid="stHorizontalBlock"]{row-gap:1rem}
+[data-testid="stAlert"]{border-radius:11px}
+[data-testid="stMetric"] {
+  background:#FFFFFF;border:1px solid var(--d-border);
+  padding:16px 18px;border-radius:12px;
 }
-[data-testid="stHorizontalBlock"] {
-    row-gap: 1rem;
+.dtwh-header{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:15px 20px;margin:0 0 20px;border-radius:17px;
+  background:linear-gradient(100deg,#EFF6FF,#FFFFFF);
+  border:1px solid #DCE9FA;
 }
-[data-testid="stExpander"] {
-    border: 1px solid var(--dtwh-border);
-    border-radius: 11px;
-}
-hr {
-    border-color: var(--dtwh-border) !important;
-}
-@media (max-width: 768px) {
-    .block-container {
-        padding: 1.25rem 0.85rem 2rem;
-    }
-    [data-testid="stMetric"] {
-        min-height: 105px;
-        padding: 14px;
-    }
+.dtwh-header h1{font-size:1.75rem!important;margin:0 0 4px}
+.dtwh-header p{color:#506784;font-size:.93rem;margin:0}
+.dtwh-kicker{font-size:.73rem;font-weight:750;letter-spacing:.1em;
+  text-transform:uppercase;color:#126EB1;margin-bottom:3px}
+.dtwh-brand{font-size:1.42rem;font-weight:820;color:#FFFFFF}
+.dtwh-brand-sub{font-size:.79rem;color:#C7E0FC;margin:2px 0 18px}
+.dtwh-sidebar-status{padding:12px 14px;background:rgba(100,170,245,.16);
+  border:1px solid rgba(200,228,255,.24);border-radius:10px;
+  font-size:.89rem;color:#E9F5FF}
+.dtwh-section{font-weight:750;font-size:1.13rem;color:#0C3470;
+  margin:23px 0 11px}
+.dtwh-filter-head{font-size:1rem;font-weight:750;color:#0C3470;
+  padding:3px 0 11px}
+.dtwh-kpi{position:relative;overflow:hidden;min-height:125px;
+  padding:17px 17px 15px;border-radius:14px;
+  border:1px solid #DAE7F5;
+  background:linear-gradient(150deg,#FFFFFF 46%,var(--kpi-tint,#F1F7FF));
+  box-shadow:0 5px 15px rgba(13,58,110,.06)}
+.dtwh-kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;
+  width:4px;background:var(--kpi-color,#126EB1)}
+.dtwh-kpi-label{font-size:.81rem;font-weight:700;color:#46607E;line-height:1.45}
+.dtwh-kpi-value{font-size:clamp(1.42rem,1.8vw,1.95rem);
+  font-weight:820;color:var(--kpi-color,#0F376C);
+  white-space:nowrap;letter-spacing:-.04em;margin:9px 0 5px}
+.dtwh-kpi-detail{font-size:.77rem;color:#58708F;line-height:1.35}
+@media(max-width:768px){
+  .block-container{padding:1.1rem .8rem 2rem}
+  .dtwh-header{padding:13px;display:block}
+  .dtwh-kpi{min-height:105px;padding:13px 14px}
+  .dtwh-kpi-value{font-size:1.4rem}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -122,10 +119,38 @@ def number(value):
     return f"{int(value):,}"
 
 
-def metric(col, title, value, caption=None):
-    col.metric(title, value)
-    if caption:
-        col.caption(caption)
+def metric_card(title, value, detail=None, accent="blue"):
+    colors = {
+        "blue": ("#0D5F9E", "#ECF5FF"),
+        "red": ("#C32346", "#FFF1F4"),
+        "teal": ("#087C77", "#ECFAF7"),
+        "violet": ("#6139B1", "#F4F0FF"),
+        "orange": ("#B54709", "#FFF5E8"),
+    }
+    color, tint = colors.get(accent, colors["blue"])
+    detail_html = (
+        f'<div class="dtwh-kpi-detail">{escape(str(detail))}</div>'
+        if detail else '<div class="dtwh-kpi-detail">&nbsp;</div>'
+    )
+    st.markdown(
+        f'<div class="dtwh-kpi" style="--kpi-color:{color};--kpi-tint:{tint}">'
+        f'<div class="dtwh-kpi-label">{escape(str(title))}</div>'
+        f'<div class="dtwh-kpi-value">{escape(str(value))}</div>'
+        f'{detail_html}</div>',
+        unsafe_allow_html=True
+    )
+
+
+def metric(col, title, value, caption=None, accent="blue"):
+    with col:
+        metric_card(title, value, caption, accent)
+
+
+def section(title):
+    st.markdown(
+        f'<div class="dtwh-section">{escape(title)}</div>',
+        unsafe_allow_html=True
+    )
 
 
 def bar_chart(df, x, y, title, order=None):
@@ -214,36 +239,42 @@ except Exception as exc:
     st.stop()
 
 with st.sidebar:
-    st.title("DTWH")
-    st.caption("Home Credit Data Lakehouse")
+    st.markdown(
+        '<div class="dtwh-brand">◈ DTWH</div>'
+        '<div class="dtwh-brand-sub">Home Credit · Risk Analytics</div>',
+        unsafe_allow_html=True
+    )
 
     page = st.radio(
-        "Dashboard",
-        [
-            "1. Hồ sơ tiếp nhận",
-            "2. Lịch sử tín dụng"
-        ]
+        "Điều hướng",
+        ["1. Hồ sơ tiếp nhận", "2. Lịch sử tín dụng"]
     )
-
-    with st.expander("Trạng thái dữ liệu"):
+    st.divider()
+    ready_count = sum(
+        item.get("status") == "READY" for item in sources.values()
+    )
+    st.markdown(
+        f'<div class="dtwh-sidebar-status">✓ &nbsp;'
+        f'{ready_count}/{len(sources)} nguồn dữ liệu sẵn sàng</div>',
+        unsafe_allow_html=True
+    )
+    with st.expander("Chi tiết nguồn dữ liệu"):
         st.json(sources)
-
-    st.caption(
-        "Dữ liệu được xử lý trên Colab và "
-        "xuất thành BI Serving Parquet."
-    )
 
 
 def dashboard_application():
-    st.title("Giám sát rủi ro hồ sơ tiếp nhận")
     st.markdown(
-        "**Dashboard 01** · Tổng quan hồ sơ vay và các chỉ số rủi ro tín dụng"
+        '<div class="dtwh-header"><div>'
+        '<div class="dtwh-kicker">Dashboard 01 · Application risk</div>'
+        '<h1>Giám sát rủi ro hồ sơ tiếp nhận</h1>'
+        '<p>Phân tích hồ sơ vay, tỷ lệ TARGET và các chỉ số tài chính</p>'
+        '</div></div>',
+        unsafe_allow_html=True
     )
-    st.caption(
-        "Nguồn: Home Credit · TARGET là nhãn lịch sử, không phải dự báo."
+    st.markdown(
+        '<div class="dtwh-filter-head">⌕ &nbsp; Bộ lọc hồ sơ</div>',
+        unsafe_allow_html=True
     )
-    st.divider()
-    st.markdown("### Bộ lọc hồ sơ")
 
     c1, c2, c3 = st.columns(3, gap="medium")
     c4, c5 = st.columns(2, gap="medium")
@@ -354,8 +385,8 @@ def dashboard_application():
         WHERE {where_sql}
     """, params).iloc[0]
 
-    st.markdown("### Tổng quan danh mục hồ sơ")
-    a, b, c, d = st.columns(4)
+    section("Tổng quan danh mục hồ sơ")
+    a, b, c = st.columns(3, gap="medium")
 
     metric(
         a, "Tổng hồ sơ",
@@ -368,42 +399,42 @@ def dashboard_application():
         b, "TARGET = 1",
         fmt(overview.target_rate_pct, 2, "%"),
         f"{number(overview.target_1)} / "
-        f"{number(overview.labeled_records)} có nhãn"
+        f"{number(overview.labeled_records)} hồ sơ có nhãn",
+        "red"
     )
 
     metric(
         c, "CTI trung vị",
-        fmt(overview.median_cti, 4, " lần")
+        fmt(overview.median_cti, 4, " lần"),
+        accent="teal"
+    )
+
+    a, b, c = st.columns(3, gap="medium")
+
+    metric(
+        a, "Credit/Goods trung vị",
+        fmt(overview.median_credit_goods, 4, " lần"),
+        accent="violet"
     )
 
     metric(
-        d, "Credit/Goods trung vị",
-        fmt(overview.median_credit_goods, 4, " lần")
+        b, "DTI trung vị",
+        fmt(overview.median_dti_pct, 2, "%"),
+        f"{number(overview.valid_dti)} hồ sơ có DTI hợp lệ",
+        "orange"
     )
 
-    a, b = st.columns(2)
+    coverage = (
+        100 * overview.labeled_records / overview.total_records
+        if overview.total_records else None
+    )
+    metric(
+        c, "Độ bao phủ nhãn",
+        fmt(coverage, 2, "%"),
+        accent="blue"
+    )
 
-    with a:
-        st.metric(
-            "DTI trung vị",
-            fmt(overview.median_dti_pct, 2, "%")
-        )
-        st.caption(
-            f"Số DTI hợp lệ: {number(overview.valid_dti)}"
-        )
-
-    with b:
-        coverage = (
-            100 * overview.labeled_records
-            / overview.total_records
-            if overview.total_records else None
-        )
-        st.metric(
-            "Độ bao phủ nhãn",
-            fmt(coverage, 2, "%")
-        )
-
-    st.markdown("### Phân tích tỷ lệ TARGET = 1")
+    section("Phân tích tỷ lệ TARGET = 1")
 
     labeled_where = (
         f"({where_sql}) AND TARGET IS NOT NULL"
@@ -526,17 +557,16 @@ def dashboard_application():
             "TARGET = 1 theo nhóm thu nhập"
         )
 
-        st.caption(
-            f"Ngưỡng thu nhập Train: "
-            f"{fmt(t1, 0)}, {fmt(t2, 0)}, "
-            f"{fmt(t3, 0)}, {fmt(t4, 0)}. "
-            "Ngưỡng cố định theo Train; tỷ lệ được "
-            "tính lại theo các bộ lọc hiện tại."
-        )
+        with st.expander("Ngưỡng phân nhóm thu nhập", expanded=False):
+            st.caption(
+                f"Ngưỡng theo Train: {fmt(t1, 0)} · {fmt(t2, 0)} · "
+                f"{fmt(t3, 0)} · {fmt(t4, 0)}. "
+                "Tỷ lệ thay đổi theo bộ lọc."
+            )
 
     st.divider()
 
-    st.subheader("Cơ cấu hồ sơ")
+    section("Cơ cấu hồ sơ")
 
     composition = query(con, f"""
         SELECT
@@ -565,24 +595,27 @@ def dashboard_application():
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    st.caption(
-        "Tỷ lệ TARGET luôn chỉ tính trên hồ sơ có nhãn. "
-        "CTI = Credit/Income; Credit/Goods = Credit/Goods Price; "
-        "DTI = Annuity/Income. Các trung vị tính trên "
-        "hồ sơ đang được lọc."
-    )
+    with st.expander("Phương pháp tính", expanded=False):
+        st.caption(
+            "TARGET chỉ tính trên hồ sơ có nhãn. "
+            "CTI = Credit/Income; Credit/Goods = Credit/Goods Price; "
+            "DTI = Annuity/Income. Trung vị tính theo bộ lọc."
+        )
 
 
 def dashboard_history():
-    st.title("Lịch sử tín dụng và hành vi thanh toán")
     st.markdown(
-        "**Dashboard 02** · Theo dõi kỳ thanh toán, hợp đồng cũ và tín dụng ngoài"
+        '<div class="dtwh-header"><div>'
+        '<div class="dtwh-kicker">Dashboard 02 · Credit history</div>'
+        '<h1>Lịch sử tín dụng và hành vi thanh toán</h1>'
+        '<p>Theo dõi lịch sử trả góp, hợp đồng và dư nợ tín dụng</p>'
+        '</div></div>',
+        unsafe_allow_html=True
     )
-    st.caption(
-        "Dữ liệu tổng hợp theo khách hàng và cửa sổ lịch sử trên Google Colab."
+    st.markdown(
+        '<div class="dtwh-filter-head">⌕ &nbsp; Bộ lọc lịch sử</div>',
+        unsafe_allow_html=True
     )
-    st.divider()
-    st.markdown("### Bộ lọc lịch sử")
 
     f1, f2, f3 = st.columns(3)
 
@@ -642,27 +675,30 @@ def dashboard_history():
         if inst.customers else None
     )
 
-    st.markdown("### Chất lượng thanh toán")
-    a, b, c, d = st.columns(4)
+    section("Chất lượng thanh toán")
+    a, b, c, d = st.columns(4, gap="medium")
 
     metric(
         a, "Kỳ trả trễ",
         fmt(late_rate, 2, "%"),
         f"{number(inst.late_periods)} / "
-        f"{number(inst.valid_periods)} kỳ đủ dữ liệu"
+        f"{number(inst.valid_periods)} kỳ đủ dữ liệu",
+        "red"
     )
 
     metric(
         b, "Khách từng có kỳ trễ",
         fmt(customer_late_rate, 2, "%"),
         f"{number(inst.customers_ever_late)} / "
-        f"{number(inst.customers)} khách"
+        f"{number(inst.customers)} khách",
+        "orange"
     )
 
     metric(
         c, "Tổng thiếu hụt",
         fmt(inst.shortfall / 1e6, 2, " triệu"),
-        "Đơn vị tiền của nguồn Home Credit"
+        "Đơn vị tiền theo nguồn",
+        "violet"
     )
 
     metric(
@@ -688,13 +724,13 @@ def dashboard_history():
         if previous.total else None
     )
 
-    st.metric(
+    section("Lịch sử đơn vay")
+    metric_card(
         "Tỷ lệ phê duyệt đơn cũ",
-        fmt(approval_rate, 2, "%")
-    )
-    st.caption(
+        fmt(approval_rate, 2, "%"),
         f"{number(previous.approved)} / "
-        f"{number(previous.total)} đơn"
+        f"{number(previous.total)} đơn",
+        "teal"
     )
 
     st.divider()
@@ -726,13 +762,12 @@ def dashboard_history():
     with a:
         st.subheader("Sử dụng thẻ tín dụng")
 
-        st.metric(
+        metric_card(
             "Khách dùng thẻ trung bình >80%",
-            fmt(high_rate, 2, "%")
-        )
-        st.caption(
+            fmt(high_rate, 2, "%"),
             f"{number(cc_summary.high_utilization)} / "
-            f"{number(cc_summary.customers)} khách"
+            f"{number(cc_summary.customers)} khách",
+            "orange"
         )
 
         card_groups = query(con, f"""
@@ -782,11 +817,11 @@ def dashboard_history():
             ]
         )
 
-        st.caption(
-            "Mức sử dụng thẻ là trung bình tỷ lệ "
-            "Balance/Credit Limit theo khách hàng. "
-            "TARGET chỉ dùng hồ sơ Train có nhãn."
-        )
+        with st.expander("Cách tính mức sử dụng thẻ", expanded=False):
+            st.caption(
+                "Trung bình Balance/Credit Limit theo khách hàng; "
+                "TARGET lấy từ tập Train có nhãn."
+            )
 
     with b:
         st.subheader("Dư nợ bên ngoài")
@@ -801,30 +836,29 @@ def dashboard_history():
             WHERE {debt_filter}
         """, debt_params)
 
-        st.metric(
+        metric_card(
             "Tổng dư nợ Bureau",
             fmt(
                 debt / 1e9 if debt is not None else None,
                 2,
                 " tỷ"
-            )
+            ),
+            accent="violet"
         )
 
-        st.caption(
-            "Tổng dư nợ Bureau là dữ liệu "
-            "tổng hợp theo khách hàng, không phải "
-            "dư nợ tại ngày hiện tại."
-        )
+        with st.expander("Phạm vi dư nợ", expanded=False):
+            st.caption(
+                "Tổng dư nợ lịch sử theo khách hàng, "
+                "không phải số dư tại ngày hiện tại."
+            )
 
     st.divider()
     st.subheader("Trạng thái Bureau theo tháng")
 
     if contracts or late_only:
-        st.warning(
-            "Không hiển thị biểu đồ Bureau theo nhóm "
-            "khách hàng đang lọc: bảng BI hiện tại "
-            "chỉ tổng hợp theo tháng và trạng thái, "
-            "chưa lưu mã khách hàng."
+        st.info(
+            "Biểu đồ Bureau theo tháng không hỗ trợ "
+            "bộ lọc nhóm khách hàng hiện tại."
         )
     else:
         status_options = [
@@ -915,28 +949,20 @@ def dashboard_history():
                 fig, use_container_width=True
             )
 
-        st.caption(
-            "Mẫu số chỉ bao gồm trạng thái 0–5. "
-            "C và X không được tính là không quá hạn. "
-            "Nếu chọn trạng thái, tỷ lệ được tính "
-            "trong tập trạng thái đã chọn."
-        )
+        with st.expander("Cách tính tỷ lệ Bureau", expanded=False):
+            st.caption(
+                "Mẫu số chỉ gồm trạng thái 0–5. "
+                "C/X không được tính là không quá hạn. "
+                "Bộ lọc trạng thái thay đổi tập mẫu."
+            )
 
     st.divider()
 
-    st.info(
-        "Bản BI Serving không lưu giao dịch chi tiết, "
-        "nên chưa hỗ trợ danh sách nhắc nợ, "
-        "phân phối ngày lệch từng giao dịch hoặc "
-        "trung vị ngày lệch giao dịch. "
-        "Không suy diễn các chỉ số này từ dữ liệu tổng hợp."
-    )
-
-    st.caption(
-        "Cửa sổ 6/12 tháng sử dụng ngày và tháng tương đối "
-        "trong nguồn Home Credit. Không đại diện "
-        "cho 6/12 tháng lịch tính từ hôm nay."
-    )
+    with st.expander("Phạm vi dữ liệu và phương pháp", expanded=False):
+        st.caption(
+            "Các cửa sổ 6/12 tháng dựa trên mốc tương đối của nguồn. "
+            "Không bao gồm giao dịch chi tiết hoặc danh sách nhắc nợ."
+        )
 
 
 if page == "1. Hồ sơ tiếp nhận":
