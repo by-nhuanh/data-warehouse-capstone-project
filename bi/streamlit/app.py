@@ -181,7 +181,7 @@ def cohort_condition(alias, contracts, late_only):
                 FROM installments_customer_window h
                 WHERE h.SK_ID_CURR = {alias}.SK_ID_CURR
                 AND h.window_months = 0
-                AND h.max_delta > 0
+                AND h.late_periods > 0
             )
         """)
 
@@ -605,7 +605,7 @@ def dashboard_history():
             COALESCE(SUM(i.valid_periods), 0) AS valid_periods,
             COALESCE(SUM(i.late_periods), 0) AS late_periods,
             COUNT(*) FILTER (
-                WHERE i.max_delta > 0
+                WHERE i.late_periods > 0
             ) AS customers_ever_late,
             COALESCE(SUM(i.shortfall_sum), 0) AS shortfall
         FROM installments_customer_window i
