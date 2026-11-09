@@ -110,18 +110,25 @@ def section(title):
     )
 
 
+CHART_COLORS = {
+    "TARGET theo Credit/Goods": "#4C91BD",
+    "TARGET theo nhóm tuổi": "#D98979",
+    "TARGET theo loại hợp đồng": "#65A291",
+    "TARGET theo học vấn": "#9383B8",
+    "TARGET = 1 theo nhóm thu nhập": "#C59A5C",
+    "TARGET theo mức sử dụng thẻ": "#C88372",
+}
+
+
 def bar_chart(df, x, y, title, order=None):
     st.subheader(title)
-
     if df.empty:
         st.info("Không có dữ liệu phù hợp bộ lọc.")
         return
 
     fig = px.bar(
-        df,
-        x=x,
-        y=y,
-        color_discrete_sequence=["#116DA6"],
+        df, x=x, y=y,
+        color_discrete_sequence=[CHART_COLORS.get(title, "#4C91BD")],
         hover_data=[
             c for c in ["total_records", "target_1", "customers"]
             if c in df.columns
@@ -130,30 +137,25 @@ def bar_chart(df, x, y, title, order=None):
     )
     fig.update_traces(
         marker_line_width=0,
-        hovertemplate="%{x}<br>%{y:.2f}%<extra></extra>"
+        texttemplate="%{y:.2f}%",
+        textposition="outside",
+        textfont=dict(size=12, color="#111827"),
+        cliponaxis=False
     )
+    upper = max(5.0, float(df[y].max()) * 1.24)
     fig.update_layout(
         template="plotly_white",
-        height=365,
-        margin=dict(l=14, r=14, t=18, b=46),
+        height=340,
+        margin=dict(l=12, r=12, t=30, b=45),
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
-        font=dict(family="Arial, sans-serif", size=13, color="#34445B"),
+        font=dict(size=12, color="#172A42"),
         xaxis=dict(title=None, showgrid=False, tickfont=dict(size=11)),
-        yaxis=dict(
-            title="Tỷ lệ (%)",
-            gridcolor="#E8EEF5",
-            zeroline=False,
-            ticksuffix="%"
-        ),
-        showlegend=False,
-        bargap=0.28
+        yaxis=dict(title="Tỷ lệ (%)", gridcolor="#E5ECF3",
+                   range=[0, upper], ticksuffix="%"),
+        showlegend=False, bargap=0.3
     )
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displaylogo": False}
-    )
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
 
 def cohort_condition(alias, contracts, late_only):
@@ -460,96 +462,93 @@ def dashboard_application():
                         title, order
                     )
 
-        thresholds = con.execute("""
-            SELECT
-                quantile_cont(AMT_INCOME_TOTAL, 0.2),
-                quantile_cont(AMT_INCOME_TOTAL, 0.4),
-                quantile_cont(AMT_INCOME_TOTAL, 0.6),
-                quantile_cont(AMT_INCOME_TOTAL, 0.8)
-            FROM application_dashboard
-            WHERE dataset = 'Train'
-              AND AMT_INCOME_TOTAL > 0
-              AND isfinite(AMT_INCOME_TOTAL)
-        """).fetchone()
+    third_left, third_right = st.columns(2, gap="medium")
+    with third_left:
+        if overview.labeled_records:
+            thresholds = con.execute("""
+                SELECT
+                    quantile_cont(AMT_INCOME_TOTAL, 0.2),
+                    quantile_cont(AMT_INCOME_TOTAL, 0.4),
+                    quantile_cont(AMT_INCOME_TOTAL, 0.6),
+                    quantile_cont(AMT_INCOME_TOTAL, 0.8)
+                FROM application_dashboard
+                WHERE dataset = 'Train'
+                  AND AMT_INCOME_TOTAL > 0
+                  AND isfinite(AMT_INCOME_TOTAL)
+            """).fetchone()
 
-        t1, t2, t3, t4 = thresholds
+            t1, t2, t3, t4 = thresholds
 
-        income_groups = query(con, f"""
-            SELECT
-                CASE
-                    WHEN AMT_INCOME_TOTAL IS NULL
-                      OR AMT_INCOME_TOTAL <= 0
-                        THEN '00. Không hợp lệ'
-                    WHEN AMT_INCOME_TOTAL <= ?
-                        THEN '01. Nhóm 1'
-                    WHEN AMT_INCOME_TOTAL <= ?
-                        THEN '02. Nhóm 2'
-                    WHEN AMT_INCOME_TOTAL <= ?
-                        THEN '03. Nhóm 3'
-                    WHEN AMT_INCOME_TOTAL <= ?
-                        THEN '04. Nhóm 4'
-                    ELSE '05. Nhóm 5'
-                END AS income_group,
-                COUNT(*) AS total_records,
-                SUM(TARGET) AS target_1,
-                100.0 * AVG(TARGET) AS rate
-            FROM application_dashboard
-            WHERE {labeled_where}
-            GROUP BY 1
-            ORDER BY 1
-        """, [t1, t2, t3, t4] + params)
+            income_groups = query(con, f"""
+                SELECT
+                    CASE
+                        WHEN AMT_INCOME_TOTAL IS NULL
+                          OR AMT_INCOME_TOTAL <= 0
+                            THEN '00. Không hợp lệ'
+                        WHEN AMT_INCOME_TOTAL <= ?
+                            THEN '01. Nhóm 1'
+                        WHEN AMT_INCOME_TOTAL <= ?
+                            THEN '02. Nhóm 2'
+                        WHEN AMT_INCOME_TOTAL <= ?
+                            THEN '03. Nhóm 3'
+                        WHEN AMT_INCOME_TOTAL <= ?
+                            THEN '04. Nhóm 4'
+                        ELSE '05. Nhóm 5'
+                    END AS income_group,
+                    COUNT(*) AS total_records,
+                    SUM(TARGET) AS target_1,
+                    100.0 * AVG(TARGET) AS rate
+                FROM application_dashboard
+                WHERE {labeled_where}
+                GROUP BY 1
+                ORDER BY 1
+            """, [t1, t2, t3, t4] + params)
 
-        bar_chart(
-            income_groups,
-            "income_group",
-            "rate",
-            "TARGET = 1 theo nhóm thu nhập"
-        )
-
-        with st.expander("Ngưỡng phân nhóm thu nhập", expanded=False):
-            st.caption(
-                f"Ngưỡng theo Train: {fmt(t1, 0)} · {fmt(t2, 0)} · "
-                f"{fmt(t3, 0)} · {fmt(t4, 0)}. "
-                "Tỷ lệ thay đổi theo bộ lọc."
+            bar_chart(
+                income_groups,
+                "income_group",
+                "rate",
+                "TARGET = 1 theo nhóm thu nhập"
             )
+        else:
+            st.subheader("TARGET = 1 theo nhóm thu nhập")
+            st.info("Không có dữ liệu có nhãn.")
 
-    st.divider()
+    with third_right:
+        st.subheader("Cơ cấu hồ sơ")
+        composition = query(con, f"""
+            SELECT
+                NAME_CONTRACT_TYPE,
+                COUNT(*) AS records
+            FROM application_dashboard
+            WHERE {where_sql}
+            GROUP BY 1
+            ORDER BY 2 DESC
+        """, params)
 
-    section("Cơ cấu hồ sơ")
-
-    composition = query(con, f"""
-        SELECT
-            NAME_CONTRACT_TYPE,
-            COUNT(*) AS records
-        FROM application_dashboard
-        WHERE {where_sql}
-        GROUP BY 1
-        ORDER BY 2 DESC
-    """, params)
-
-    if not composition.empty:
-        fig = px.pie(
-            composition,
-            names="NAME_CONTRACT_TYPE",
-            values="records",
-            hole=0.52,
-            color_discrete_sequence=["#116DA6", "#16A6A0", "#90B8D8"]
-        )
-        fig.update_layout(
-            template="plotly_white",
-            height=350,
-            paper_bgcolor="#FFFFFF",
-            font=dict(color="#34445B", size=13),
-            margin=dict(l=10, r=10, t=10, b=10)
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    with st.expander("Phương pháp tính", expanded=False):
-        st.caption(
-            "TARGET chỉ tính trên hồ sơ có nhãn. "
-            "CTI = Credit/Income; Credit/Goods = Credit/Goods Price; "
-            "DTI = Annuity/Income. Trung vị tính theo bộ lọc."
-        )
+        if not composition.empty:
+            fig = px.pie(
+                composition,
+                names="NAME_CONTRACT_TYPE",
+                values="records",
+                hole=0.52,
+                color_discrete_sequence=["#4D8FBF", "#E59C78", "#7DAF9D"]
+            )
+            fig.update_traces(
+                textinfo="percent", textposition="inside",
+                textfont=dict(color="#111827", size=12)
+            )
+            fig.update_layout(
+                template="plotly_white",
+                height=350,
+                paper_bgcolor="#FFFFFF",
+                font=dict(color="#34445B", size=13),
+                margin=dict(l=10, r=10, t=6, b=65),
+                legend=dict(orientation="h", yanchor="top", y=-0.12,
+                            xanchor="center", x=0.5,
+                            font=dict(color="#111827", size=12))
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def dashboard_history():
