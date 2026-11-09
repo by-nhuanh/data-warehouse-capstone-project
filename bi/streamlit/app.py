@@ -802,8 +802,21 @@ def dashboard_history():
             accent="violet"
         )
 
+    section("Phân tích sử dụng thẻ và trạng thái Bureau")
     chart_left, chart_right = st.columns(2, gap="medium")
     with chart_left:
+        st.subheader("TARGET theo mức sử dụng thẻ")
+        population = st.selectbox(
+            "Nhóm khách hàng",
+            ["Tất cả hồ sơ có nhãn", "TARGET = 0", "TARGET = 1"],
+            key="card_population"
+        )
+        card_display = st.radio(
+            "Đơn vị hiển thị",
+            ["Tỷ lệ (%)", "Số hồ sơ"],
+            horizontal=True,
+            key="card_display"
+        )
         card_groups = query(con, f"""
             SELECT CASE
                 WHEN cc.utilization IS NULL THEN 'Không hợp lệ'
@@ -816,6 +829,7 @@ def dashboard_history():
                 COUNT(*) AS customers,
                 COUNT(a.TARGET) AS labeled_customers,
                 SUM(CASE WHEN a.TARGET = 1 THEN 1 ELSE 0 END) AS target_1,
+                SUM(CASE WHEN a.TARGET = 0 THEN 1 ELSE 0 END) AS target_0,
                 100.0 * AVG(a.TARGET) AS rate
             FROM credit_card_customer_window cc
             LEFT JOIN application_dashboard a
@@ -824,12 +838,102 @@ def dashboard_history():
             WHERE cc.window_months = ? AND {cc_filter}
             GROUP BY 1 ORDER BY 1
         """, [months] + cc_params)
-        bar_chart(
-            card_groups[card_groups.labeled_customers > 0],
-            "usage_group", "rate", "TARGET theo mức sử dụng thẻ",
-            ["≤0%", "0–30%", "30–50%", "50–80%",
-             "80–100%", ">100%", "Không hợp lệ"]
-        )
+
+        card_groups = card_groups[
+            card_groups["labeled_customers"] > 0
+        ].copy()
+        order = [
+            "≤0%", "0–30%", "30–50%", "50–80%",
+            "80–100%", ">100%", "Không hợp lệ"
+        ]
+        if population == "Tất cả hồ sơ có nhãn":
+            card_groups["selected_count"] = card_groups["labeled_customers"]
+            card_groups["percent_value"] = card_groups["rate"]
+        else:
+            target_field = "target_1" if population == "TARGET = 1" else "target_0"
+            card_groups["selected_count"] = card_groups[target_field]
+            total_selected = card_groups["selected_count"].sum()
+            card_groups["percent_value"] = (
+                100.0 * card_groups["selected_count"] / total_selected
+                if total_selected else 0.0
+            )
+
+        card_groups = card_groups[
+            card_groups["selected_count"] > 0
+        ].copy()
+
+        if card_groups.empty:
+            st.info("Không có hồ sơ có nhãn phù hợp.")
+        else:
+            is_count = card_display == "Số hồ sơ"
+            y_col = "selected_count" if is_count else "percent_value"
+            fig = px.bar(
+                card_groups, x="usage_group", y=y_col,
+                category_orders={"usage_group": order},
+                color_discrete_sequence=["#CA8974"],
+                hover_data=[
+                    "labeled_customers", "target_0", "target_1"
+                ]
+            )
+            fig.update_traces(
+                marker_line_width=0,
+                texttemplate="%{y:,.0f}" if is_count else "%{y:.2f}%",
+                textposition="outside",
+                textfont=dict(size=12, color="#111111"),
+                cliponaxis=False
+            )
+            upper = max(
+                2.0, float(card_groups[y_col].max()) * 1.23
+            )
+            fig.update_layout(
+                template="plotly_white",
+                height=370,
+                margin=dict(l=12, r=12, t=34, b=45),
+                paper_bgcolor="#FFFFFF",
+                plot_bgcolor="#FFFFFF",
+                font=dict(size=12, color="#111111"),
+                xaxis=dict(
+                    title=None, showgrid=False,
+                    tickfont=dict(size=11, color="#111111")
+                ),
+                yaxis=dict(
+                    title="Số hồ sơ" if is_count else "Tỷ lệ (%)",
+                    gridcolor="#E4ECF3", range=[0, upper],
+                    color="#111111",
+                    ticksuffix="" if is_count else "%"
+                ),
+                showlegend=False, bargap=.30
+            )
+            st.plotly_chart(
+                fig, use_container_width=True,
+                config={"displaylogo": False, "displayModeBar": False}
+            )
+            s1, s2 = st.columns(2, gap="small")
+            with s1:
+                if population == "Tất cả hồ sơ có nhãn":
+                    highest = card_groups.loc[
+                        card_groups["rate"].idxmax()
+                    ]
+                    mini_card(
+                        "Nhóm có tỷ lệ TARGET cao nhất",
+                        f'{highest["usage_group"]} · {highest["rate"]:.2f}%',
+                        "orange"
+                    )
+                else:
+                    highest = card_groups.loc[
+                        card_groups["selected_count"].idxmax()
+                    ]
+                    mini_card(
+                        "Nhóm sử dụng thẻ phổ biến nhất",
+                        str(highest["usage_group"]),
+                        "orange"
+                    )
+            with s2:
+                mini_card(
+                    "Số hồ sơ có nhãn",
+                    number(card_groups["selected_count"].sum()),
+                    "blue"
+                )
 
     with chart_right:
         st.subheader("Biến động trạng thái Bureau theo tháng")
@@ -841,11 +945,13 @@ def dashboard_history():
         else:
             all_statuses = ["0", "1", "2", "3", "4", "5", "C", "X"]
             selected = st.multiselect(
-                "Trạng thái", all_statuses, default=all_statuses
+                "Trạng thái", all_statuses,
+                default=["0", "1", "2", "C", "X"],
+                key="bureau_statuses"
             )
             display_mode = st.radio(
-                "Đơn vị", ["Tỷ trọng (%)", "Số bản ghi"],
-                horizontal=True
+                "Đơn vị hiển thị", ["Tỷ trọng (%)", "Số bản ghi"],
+                horizontal=True, key="bureau_display"
             )
             bureau = query(con, """
                 WITH status_month AS (
@@ -895,7 +1001,7 @@ def dashboard_history():
                 )
                 fig.update_layout(
                     template="plotly_white",
-                    height=385,
+                    height=370,
                     paper_bgcolor="#FFFFFF",
                     plot_bgcolor="#FFFFFF",
                     font=dict(color="#111111", size=12),
@@ -910,8 +1016,27 @@ def dashboard_history():
                 )
                 st.plotly_chart(
                     fig, use_container_width=True,
-                    config={"displaylogo": False}
+                    config={"displaylogo": False, "displayModeBar": False}
                 )
+                bureau_summary = bureau.groupby(
+                    "status", as_index=False
+                )["n"].sum()
+                most_common = bureau_summary.loc[
+                    bureau_summary["n"].idxmax()
+                ]
+                r1, r2 = st.columns(2, gap="small")
+                with r1:
+                    mini_card(
+                        "Trạng thái phổ biến nhất",
+                        str(most_common["status"]),
+                        "teal"
+                    )
+                with r2:
+                    mini_card(
+                        "Số bản ghi đã chọn",
+                        number(bureau_summary["n"].sum()),
+                        "violet"
+                    )
 
 
 if page == "1. Hồ sơ tiếp nhận":
