@@ -16,49 +16,86 @@ ROOT = Path(__file__).resolve().parents[2]
 
 st.markdown("""
 <style>
-html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"],[data-testid="stHeader"] {
-    background:#FFFFFF!important;color:#172A42!important;color-scheme:light!important;
+:root {color-scheme:light!important}
+html, body, .stApp, [data-testid="stAppViewContainer"],
+[data-testid="stMain"], [data-testid="stHeader"] {
+    background:#FFFFFF!important;color:#111111!important;color-scheme:light!important;
 }
-.block-container {max-width:1530px;padding:1.6rem 2rem 3rem}
-[data-testid="stSidebar"] {background:#0B2C55!important}
-[data-testid="stSidebar"] * {color:#FFFFFF}
-[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
-    background:#1C5086;border-radius:10px
+.block-container{max-width:1540px;padding:1.8rem 2.15rem 3rem}
+[data-testid="stSidebar"]{background:#0B2C55!important}
+[data-testid="stSidebar"] *{color:#FFFFFF!important}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked){
+    background:#205589;border-radius:10px
 }
-h1,h2,h3 {color:#16385F!important;letter-spacing:-.02em}
-h1{font-size:1.85rem!important;font-weight:780!important}
-h3{font-size:1.13rem!important;font-weight:700!important}
-[data-testid="stWidgetLabel"] p {color:#233B56!important;font-weight:650!important}
-[data-baseweb="select"]>div {background:#FFFFFF!important;border-color:#C6D5E4!important}
-[data-testid="stPlotlyChart"] {
-    background:#FFFFFF!important;border:1px solid #DEE6EF;
-    border-radius:12px;padding:8px
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p{
+    color:#FFFFFF!important
 }
-[data-testid="stHorizontalBlock"] {row-gap:1rem}
-[data-testid="stMetric"] {background:#F2F6FA!important;border:1px solid #DEE6EF;
-    border-radius:12px;padding:15px}
-[data-testid="stCaptionContainer"] p {color:#55677D!important}
-.dtwh-brand{font-size:1.45rem;font-weight:800;color:#FFFFFF}
-.dtwh-brand-sub{font-size:.8rem;color:#C7DDF4;margin:0 0 17px}
-.dtwh-header {background:#F4F8FC;border:1px solid #DCE6F1;
-    border-radius:13px;padding:18px 21px;margin-bottom:17px}
+[data-testid="stSidebar"] [data-testid="stExpander"]{
+    border:1px solid #7FA4CA;border-radius:10px
+}
+h1,h2,h3,p,label,small,span{color:#111111}
+h1,h2,h3{font-weight:750!important;letter-spacing:-.02em}
+h1{font-size:1.85rem!important}
+h3{font-size:1.13rem!important}
+[data-testid="stWidgetLabel"] p,
+[data-testid="stCaptionContainer"] p,
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stRadio"] p,
+[data-testid="stCheckbox"] p,
+[data-testid="stSelectbox"] label,
+[data-testid="stMultiSelect"] label{
+    color:#111111!important
+}
+[data-baseweb="select"]>div,
+[data-baseweb="input"] input{
+    background:#FFFFFF!important;border-color:#90A4B9!important;
+    color:#111111!important
+}
+[data-baseweb="select"] span,
+[data-baseweb="select"] input,
+[data-baseweb="tag"] span{color:#111111!important}
+[data-testid="stSlider"] [data-testid="stTickBar"] span{color:#111111!important}
+[data-testid="stPlotlyChart"]{
+    background:#FFFFFF!important;border:1px solid #C9D9E8;
+    border-radius:13px;padding:9px;overflow:visible!important
+}
+[data-testid="stHorizontalBlock"]{row-gap:1.25rem;column-gap:1.1rem}
+[data-testid="stMetric"]{
+    background:#EDF4FB!important;border:1px solid #BCD0E2;
+    border-radius:13px;padding:16px
+}
+[data-testid="stAlert"]{border-radius:11px}
+.dtwh-brand{font-size:1.45rem;font-weight:800;color:#FFFFFF!important}
+.dtwh-brand-sub{font-size:.82rem;color:#FFFFFF!important;margin:0 0 17px}
+.dtwh-header{background:#EAF3FB;border:1px solid #C8DCEB;
+    border-radius:14px;padding:19px 22px;margin-bottom:20px}
+.dtwh-header h1,.dtwh-header p,.dtwh-kicker{color:#111111!important}
 .dtwh-header h1{margin:3px 0 5px}
-.dtwh-header p{color:#536B83;font-size:.94rem;margin:0}
-.dtwh-kicker{font-size:.73rem;font-weight:800;letter-spacing:.09em;color:#296F9C}
-.dtwh-filter-head{font-size:1rem;font-weight:750;color:#164879;margin:12px 0 7px}
-.dtwh-section{font-size:1.14rem;font-weight:800;color:#164879;margin:23px 0 12px}
-.dtwh-kpi{min-height:117px;padding:17px;border-radius:13px;
-    border:1px solid #DFE6EE;background:var(--kpi-bg,#EAF3FC)!important}
+.dtwh-header p{font-size:.95rem;margin:0}
+.dtwh-kicker{font-size:.73rem;font-weight:800;letter-spacing:.09em}
+.dtwh-filter-head{font-size:1.02rem;font-weight:750;color:#111111!important;margin:14px 0 10px}
+.dtwh-section{font-size:1.15rem;font-weight:800;color:#111111!important;margin:29px 0 15px}
+.dtwh-kpi{box-sizing:border-box;min-height:150px;height:100%;
+    padding:19px 19px 17px;border-radius:14px;
+    border:1px solid #C4D3E1;background:var(--kpi-bg,#E7F1FB)!important;
+    margin:0 0 18px!important;display:flex;flex-direction:column;justify-content:center}
 .dtwh-kpi:before{display:none!important}
-.dtwh-kpi-label{font-size:.83rem;font-weight:700;color:#455A72}
-.dtwh-kpi-value{font-size:clamp(1.32rem,1.85vw,1.98rem);font-weight:800;
-    color:#111827!important;letter-spacing:-.03em;margin:9px 0 5px;white-space:nowrap}
-.dtwh-kpi-detail{font-size:.77rem;color:#566A7E;line-height:1.4}
+.dtwh-kpi-label{font-size:.89rem;font-weight:750;color:#111111!important;line-height:1.45}
+.dtwh-kpi-value{font-size:clamp(1.4rem,1.85vw,2.05rem);font-weight:820;
+    color:#111111!important;letter-spacing:-.035em;margin:10px 0 6px;white-space:normal}
+.dtwh-kpi-detail{font-size:.82rem;color:#111111!important;line-height:1.45}
+.dtwh-kpi-mini{min-height:83px;height:100%;padding:14px 15px;
+    background:var(--kpi-bg,#E7F1FB)!important;border:1px solid #C4D3E1;
+    border-radius:12px;margin-top:13px}
+.dtwh-kpi-mini-label{font-size:.78rem;font-weight:700;color:#111111!important}
+.dtwh-kpi-mini-value{font-size:1.14rem;font-weight:800;color:#111111!important;margin-top:5px}
+.dtwh-row-gap{height:15px;display:block}
 @media(max-width:768px){
-    .block-container{padding:1.1rem .8rem 2rem}
-    .dtwh-header{padding:13px}
-    .dtwh-kpi{min-height:103px;padding:12px}
-    .dtwh-kpi-value{font-size:1.35rem}
+    .block-container{padding:1.05rem .82rem 2rem}
+    .dtwh-header{padding:14px}
+    .dtwh-kpi{min-height:122px;padding:14px;margin-bottom:14px!important}
+    .dtwh-kpi-value{font-size:1.43rem}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -82,7 +119,7 @@ def metric_card(title, value, detail=None, accent="blue"):
         "teal": "#E7F6F1",
         "violet": "#F0ECFA",
         "orange": "#FFF2E4",
-        "slate": "#F0F4F8",
+        "slate": "#E5F0FB",
     }
     color = colors.get(accent, colors["blue"])
     detail_html = (
@@ -101,6 +138,24 @@ def metric_card(title, value, detail=None, accent="blue"):
 def metric(col, title, value, caption=None, accent="blue"):
     with col:
         metric_card(title, value, caption, accent)
+
+
+def mini_card(title, value, accent="blue"):
+    colors = {
+        "blue": "#E7F1FB",
+        "red": "#FCECE6",
+        "teal": "#E4F4EE",
+        "violet": "#F0EAF9",
+        "orange": "#FFF0DF",
+    }
+    bg = colors.get(accent, colors["blue"])
+    st.markdown(
+        f'<div class="dtwh-kpi-mini" style="--kpi-bg:{bg}">'
+        f'<div class="dtwh-kpi-mini-label">{escape(str(title))}</div>'
+        f'<div class="dtwh-kpi-mini-value">{escape(str(value))}</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 
 def section(title):
@@ -139,7 +194,7 @@ def bar_chart(df, x, y, title, order=None):
         marker_line_width=0,
         texttemplate="%{y:.2f}%",
         textposition="outside",
-        textfont=dict(size=12, color="#111827"),
+        textfont=dict(size=12, color="#111111"),
         cliponaxis=False
     )
     upper = max(5.0, float(df[y].max()) * 1.24)
@@ -149,13 +204,13 @@ def bar_chart(df, x, y, title, order=None):
         margin=dict(l=12, r=12, t=30, b=45),
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
-        font=dict(size=12, color="#172A42"),
-        xaxis=dict(title=None, showgrid=False, tickfont=dict(size=11)),
-        yaxis=dict(title="Tỷ lệ (%)", gridcolor="#E5ECF3",
+        font=dict(size=12, color="#111111"),
+        xaxis=dict(title=None, showgrid=False, tickfont=dict(size=11, color="#111111")),
+        yaxis=dict(title="Tỷ lệ (%)", color="#111111", gridcolor="#E5ECF3",
                    range=[0, upper], ticksuffix="%"),
         showlegend=False, bargap=0.3
     )
-    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "displayModeBar": False})
 
 
 def cohort_condition(alias, contracts, late_only, months=0):
@@ -363,6 +418,7 @@ def dashboard_application():
         accent="teal"
     )
 
+    st.markdown('<div class="dtwh-row-gap"></div>', unsafe_allow_html=True)
     a, b, c = st.columns(3, gap="medium")
 
     metric(
@@ -388,6 +444,7 @@ def dashboard_application():
         accent="blue"
     )
 
+    st.markdown('<div class="dtwh-row-gap"></div>', unsafe_allow_html=True)
     section("Phân tích tỷ lệ TARGET = 1")
 
     labeled_where = (
@@ -551,17 +608,17 @@ def dashboard_application():
             )
             fig.update_traces(
                 textinfo="percent", textposition="inside",
-                textfont=dict(color="#111827", size=12)
+                textfont=dict(color="#111111", size=12)
             )
             fig.update_layout(
                 template="plotly_white",
                 height=350,
                 paper_bgcolor="#FFFFFF",
-                font=dict(color="#34445B", size=13),
+                font=dict(color="#111111", size=13),
                 margin=dict(l=10, r=10, t=6, b=65),
                 legend=dict(orientation="h", yanchor="top", y=-0.12,
                             xanchor="center", x=0.5,
-                            font=dict(color="#111827", size=12))
+                            font=dict(color="#111111", size=12))
             )
             st.plotly_chart(fig, use_container_width=True)
 
@@ -841,14 +898,14 @@ def dashboard_history():
                     height=385,
                     paper_bgcolor="#FFFFFF",
                     plot_bgcolor="#FFFFFF",
-                    font=dict(color="#172A42", size=12),
+                    font=dict(color="#111111", size=12),
                     margin=dict(l=12, r=12, t=12, b=82),
                     xaxis=dict(showgrid=False),
                     yaxis=dict(gridcolor="#E5EBF2"),
                     legend=dict(
                         orientation="h", yanchor="top", y=-.22,
                         xanchor="center", x=.5, title=None,
-                        font=dict(color="#111827", size=11)
+                        font=dict(color="#111111", size=11)
                     )
                 )
                 st.plotly_chart(
