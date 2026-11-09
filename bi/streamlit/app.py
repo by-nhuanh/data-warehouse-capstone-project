@@ -507,11 +507,23 @@ def dashboard_application():
                 ORDER BY 1
             """, [t1, t2, t3, t4] + params)
 
+            income_labels = {
+                "00. Không hợp lệ": "Không hợp lệ",
+                "01. Nhóm 1": f"≤{t1/1000:,.0f}k",
+                "02. Nhóm 2": f"{t1/1000:,.0f}–{t2/1000:,.0f}k",
+                "03. Nhóm 3": f"{t2/1000:,.0f}–{t3/1000:,.0f}k",
+                "04. Nhóm 4": f"{t3/1000:,.0f}–{t4/1000:,.0f}k",
+                "05. Nhóm 5": f">{t4/1000:,.0f}k",
+            }
+            income_groups["income_group"] = (
+                income_groups["income_group"].replace(income_labels)
+            )
             bar_chart(
                 income_groups,
                 "income_group",
                 "rate",
-                "TARGET = 1 theo nhóm thu nhập"
+                "TARGET = 1 theo nhóm thu nhập",
+                list(income_labels.values())
             )
         else:
             st.subheader("TARGET = 1 theo nhóm thu nhập")
