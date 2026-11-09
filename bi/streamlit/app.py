@@ -805,7 +805,7 @@ def dashboard_history():
     section("Phân tích sử dụng thẻ và trạng thái Bureau")
     chart_left, chart_right = st.columns(2, gap="medium")
     with chart_left:
-        st.subheader("TARGET theo mức sử dụng thẻ")
+        st.subheader("TARGET và mức sử dụng thẻ")
         population = st.selectbox(
             "Nhóm khách hàng",
             ["Tất cả hồ sơ có nhãn", "TARGET = 0", "TARGET = 1"],
@@ -816,6 +816,11 @@ def dashboard_history():
             ["Tỷ lệ (%)", "Số hồ sơ"],
             horizontal=True,
             key="card_display"
+        )
+        st.caption(
+            "Tỷ lệ TARGET = 1 theo nhóm sử dụng thẻ"
+            if population == "Tất cả hồ sơ có nhãn"
+            else "Cơ cấu mức sử dụng thẻ trong nhóm TARGET đã chọn"
         )
         card_groups = query(con, f"""
             SELECT CASE
