@@ -1,2 +1,0 @@
-﻿model_name,target_layer,grain,source_table,important_columns,design_note
-stg_installments_payments,Silver (logical name),Một bản ghi thanh toán nguồn,bronze.installments_payments,"SK_ID_CURR, SK_ID_PREV, NUM_INSTALMENT_VERSION, NUM_INSTALMENT_NUMBER, DAYS_INSTALMENT, DAYS_ENTRY_PAYMENT, AMT_INSTALMENT, AMT_PAYMENT",Giữ bản ghi nguồn để truy vết; không thiết kế fact_payment_event tại Gold

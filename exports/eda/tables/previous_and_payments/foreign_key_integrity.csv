@@ -1,5 +1,0 @@
-﻿Quan_He_Lien_Ket,Khoa_Kiem_Tra,Tong_Khoa_Con,Khoa_Khop_Cha,Khoa_Mo_Coi_Orphan
-POS_CASH -> previous_application,SK_ID_PREV,936325,936325,0
-installments -> previous_application,SK_ID_PREV,997752,997752,0
-credit_card -> previous_application,SK_ID_PREV,104307,104307,0
-previous_application -> application (Train+Test),SK_ID_CURR,338857,338857,0

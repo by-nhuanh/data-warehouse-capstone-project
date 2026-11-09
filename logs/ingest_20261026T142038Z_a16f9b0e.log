@@ -1,8 +1,0 @@
-2026-10-26 14:20:42,932 INFO POS_CASH_balance.csv: 10,001,358 rows; Parquet 142.3 MiB
-2026-10-26 14:20:43,095 INFO application_test.csv: 48,744 rows; Parquet 4.9 MiB
-2026-10-26 14:20:44,092 INFO application_train.csv: 307,511 rows; Parquet 29.0 MiB
-2026-10-26 14:20:45,655 INFO bureau.csv: 1,716,428 rows; Parquet 45.2 MiB
-2026-10-26 14:20:51,246 INFO bureau_balance.csv: 27,299,925 rows; Parquet 17.1 MiB
-2026-10-26 14:20:53,822 INFO credit_card_balance.csv: 3,840,312 rows; Parquet 165.9 MiB
-2026-10-26 14:20:57,617 INFO installments_payments.csv: 13,605,401 rows; Parquet 404.2 MiB
-2026-10-26 14:20:59,678 INFO previous_application.csv: 1,670,214 rows; Parquet 84.6 MiB

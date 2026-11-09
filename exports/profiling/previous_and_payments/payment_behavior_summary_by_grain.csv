@@ -1,6 +1,0 @@
-﻿grain,metric,value,numerator,denominator
-transaction,late_rate_pct,8.43,1146669,13602496
-installment_period,late_rate_pct,8.52,1103475,12949013
-installment_period,shortfall_period_count,2934.0,2934,12949013
-customer,ever_late_count,179845.0,179845,339578
-customer,ever_short_count,2796.0,2796,339578

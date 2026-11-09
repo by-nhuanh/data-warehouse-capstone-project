@@ -1,3 +1,0 @@
-source_table,table_name,grain_keys,total_rows,distinct_key_groups,duplicate_extra_rows,rows_with_null_keys
-bureau_balance,bureau_balance,"SK_ID_BUREAU, MONTHS_BALANCE",27299925.0,27299925,0.0,0.0
-credit_card_balance,credit_card_balance,"SK_ID_PREV, MONTHS_BALANCE",3840312.0,3840312,0.0,0.0

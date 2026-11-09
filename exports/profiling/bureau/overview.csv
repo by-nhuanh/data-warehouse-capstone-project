@@ -1,3 +1,0 @@
-﻿Tên Tệp,Nhóm Bảng,Số dòng,Số cột,RAM (MB),Dòng trùng lặp,Tỷ lệ trùng (%),Số khách hàng (SK_ID_CURR),Số khoản vay (SK_ID_BUREAU),Ô khuyết thiếu (Null),Tỷ lệ Null (%)
-bureau.csv,Bureau (Lịch sử CIC),1716428,17,DuckDB streamed,0,0.0,305811,1716428,3939947,13.5
-bureau_balance.csv,Bureau Balance (Dư nợ tháng),27299925,3,DuckDB streamed,0,0.0,N/A (Không có),817395,0,0.0
