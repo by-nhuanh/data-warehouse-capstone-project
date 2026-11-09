@@ -158,7 +158,7 @@ def bar_chart(df, x, y, title, order=None):
     st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
 
-def cohort_condition(alias, contracts, late_only):
+def cohort_condition(alias, contracts, late_only, months=0):
     clauses = []
     params = []
 
@@ -180,10 +180,13 @@ def cohort_condition(alias, contracts, late_only):
                 SELECT 1
                 FROM installments_customer_window h
                 WHERE h.SK_ID_CURR = {alias}.SK_ID_CURR
-                AND h.window_months = 0
+                AND h.window_months = ?
                 AND h.late_periods > 0
             )
         """)
+
+    if late_only:
+        params.append(months)
 
     if not clauses:
         return "TRUE", []
@@ -595,7 +598,7 @@ def dashboard_history():
     )
 
     inst_filter, inst_params = cohort_condition(
-        "i", contracts, late_only
+        "i", contracts, late_only, months
     )
 
     inst = query(con, f"""
@@ -655,7 +658,7 @@ def dashboard_history():
     )
 
     prev_filter, prev_params = cohort_condition(
-        "p", contracts, late_only
+        "p", contracts, late_only, months
     )
 
     previous = query(con, f"""
@@ -673,7 +676,7 @@ def dashboard_history():
     )
 
     cc_filter, cc_params = cohort_condition(
-        "cc", contracts, late_only
+        "cc", contracts, late_only, months
     )
 
     cc_summary = query(con, f"""
@@ -695,7 +698,7 @@ def dashboard_history():
     )
 
     debt_filter, debt_params = cohort_condition(
-        "b", contracts, late_only
+        "b", contracts, late_only, months
     )
     debt = scalar(con, f"""
         SELECT SUM(b.bureau_debt_sum)
