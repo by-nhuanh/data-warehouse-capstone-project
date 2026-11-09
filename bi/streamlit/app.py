@@ -672,17 +672,6 @@ def dashboard_history():
         if previous.total else None
     )
 
-    section("Lịch sử đơn vay")
-    metric_card(
-        "Tỷ lệ phê duyệt đơn cũ",
-        fmt(approval_rate, 2, "%"),
-        f"{number(previous.approved)} / "
-        f"{number(previous.total)} đơn",
-        "teal"
-    )
-
-    st.divider()
-
     cc_filter, cc_params = cohort_condition(
         "cc", contracts, late_only
     )
@@ -705,11 +694,27 @@ def dashboard_history():
         if cc_summary.customers else None
     )
 
-    a, b = st.columns(2)
+    debt_filter, debt_params = cohort_condition(
+        "b", contracts, late_only
+    )
+    debt = scalar(con, f"""
+        SELECT SUM(b.bureau_debt_sum)
+        FROM bureau_customer_debt b
+        WHERE {debt_filter}
+    """, debt_params)
 
-    with a:
+    section("Tổng quan tín dụng")
+    k1, k2, k3 = st.columns(3, gap="medium")
+    with k1:
+        st.subheader("Lịch sử đơn vay")
+        metric_card(
+            "Tỷ lệ phê duyệt đơn cũ",
+            fmt(approval_rate, 2, "%"),
+            f"{number(previous.approved)} / {number(previous.total)} đơn",
+            "teal"
+        )
+    with k2:
         st.subheader("Sử dụng thẻ tín dụng")
-
         metric_card(
             "Khách dùng thẻ trung bình >80%",
             fmt(high_rate, 2, "%"),
@@ -717,200 +722,124 @@ def dashboard_history():
             f"{number(cc_summary.customers)} khách",
             "orange"
         )
+    with k3:
+        st.subheader("Dư nợ bên ngoài")
+        metric_card(
+            "Tổng dư nợ Bureau",
+            fmt(debt / 1e9 if debt is not None else None, 2, " tỷ"),
+            accent="violet"
+        )
 
+    chart_left, chart_right = st.columns(2, gap="medium")
+    with chart_left:
         card_groups = query(con, f"""
-            SELECT
-                CASE
-                    WHEN cc.utilization IS NULL
-                        THEN 'Không hợp lệ'
-                    WHEN cc.utilization <= 0
-                        THEN '<=0%'
-                    WHEN cc.utilization <= 0.3
-                        THEN '0-30%'
-                    WHEN cc.utilization <= 0.5
-                        THEN '30-50%'
-                    WHEN cc.utilization <= 0.8
-                        THEN '50-80%'
-                    WHEN cc.utilization <= 1
-                        THEN '80-100%'
-                    ELSE '>100%'
-                END AS usage_group,
+            SELECT CASE
+                WHEN cc.utilization IS NULL THEN 'Không hợp lệ'
+                WHEN cc.utilization <= 0 THEN '≤0%'
+                WHEN cc.utilization <= .3 THEN '0–30%'
+                WHEN cc.utilization <= .5 THEN '30–50%'
+                WHEN cc.utilization <= .8 THEN '50–80%'
+                WHEN cc.utilization <= 1 THEN '80–100%'
+                ELSE '>100%' END AS usage_group,
                 COUNT(*) AS customers,
                 COUNT(a.TARGET) AS labeled_customers,
-                SUM(
-                    CASE WHEN a.TARGET = 1 THEN 1 ELSE 0 END
-                ) AS target_1,
+                SUM(CASE WHEN a.TARGET = 1 THEN 1 ELSE 0 END) AS target_1,
                 100.0 * AVG(a.TARGET) AS rate
             FROM credit_card_customer_window cc
             LEFT JOIN application_dashboard a
               ON a.SK_ID_CURR = cc.SK_ID_CURR
              AND a.dataset = 'Train'
-            WHERE cc.window_months = ?
-              AND {cc_filter}
-            GROUP BY 1
-            ORDER BY 1
+            WHERE cc.window_months = ? AND {cc_filter}
+            GROUP BY 1 ORDER BY 1
         """, [months] + cc_params)
-
         bar_chart(
-            card_groups[
-                card_groups.labeled_customers > 0
-            ],
-            "usage_group",
-            "rate",
-            "TARGET theo mức sử dụng thẻ",
-            [
-                "<=0%", "0-30%", "30-50%",
-                "50-80%", "80-100%", ">100%",
-                "Không hợp lệ"
-            ]
+            card_groups[card_groups.labeled_customers > 0],
+            "usage_group", "rate", "TARGET theo mức sử dụng thẻ",
+            ["≤0%", "0–30%", "30–50%", "50–80%",
+             "80–100%", ">100%", "Không hợp lệ"]
         )
 
-        with st.expander("Cách tính mức sử dụng thẻ", expanded=False):
-            st.caption(
-                "Trung bình Balance/Credit Limit theo khách hàng; "
-                "TARGET lấy từ tập Train có nhãn."
+    with chart_right:
+        st.subheader("Biến động trạng thái Bureau theo tháng")
+        if contracts or late_only:
+            st.warning(
+                "Bộ lọc nhóm khách hàng không áp dụng "
+                "cho dữ liệu Bureau theo tháng."
             )
-
-    with b:
-        st.subheader("Dư nợ bên ngoài")
-
-        debt_filter, debt_params = cohort_condition(
-            "b", contracts, late_only
-        )
-
-        debt = scalar(con, f"""
-            SELECT SUM(b.bureau_debt_sum)
-            FROM bureau_customer_debt b
-            WHERE {debt_filter}
-        """, debt_params)
-
-        metric_card(
-            "Tổng dư nợ Bureau",
-            fmt(
-                debt / 1e9 if debt is not None else None,
-                2,
-                " tỷ"
-            ),
-            accent="violet"
-        )
-
-        with st.expander("Phạm vi dư nợ", expanded=False):
-            st.caption(
-                "Tổng dư nợ lịch sử theo khách hàng, "
-                "không phải số dư tại ngày hiện tại."
-            )
-
-    st.divider()
-    st.subheader("Trạng thái Bureau theo tháng")
-
-    if contracts or late_only:
-        st.info(
-            "Biểu đồ Bureau theo tháng không hỗ trợ "
-            "bộ lọc nhóm khách hàng hiện tại."
-        )
-    else:
-        status_options = [
-            "0", "1", "2", "3", "4", "5", "C", "X"
-        ]
-
-        statuses = st.multiselect(
-            "Trạng thái Bureau",
-            status_options
-        )
-
-        conditions = ["1=1"]
-        args = []
-
-        if months:
-            conditions.append(
-                "MONTHS_BALANCE BETWEEN ? AND 0"
-            )
-            args.append(-months + 1)
-
-        if statuses:
-            conditions.append(
-                "STATUS IN ("
-                + ",".join("?" for _ in statuses) + ")"
-            )
-            args.extend(statuses)
-
-        bureau_where = " AND ".join(conditions)
-
-        bureau = query(con, f"""
-            SELECT
-                MONTHS_BALANCE,
-                SUM(
-                    CASE WHEN STATUS IN ('1','2','3','4','5')
-                    THEN records ELSE 0 END
-                ) AS late_records,
-                SUM(
-                    CASE WHEN STATUS IN ('0','1','2','3','4','5')
-                    THEN records ELSE 0 END
-                ) AS valid_records,
-                100.0 * SUM(
-                    CASE WHEN STATUS IN ('1','2','3','4','5')
-                    THEN records ELSE 0 END
-                ) / NULLIF(
-                    SUM(
-                        CASE WHEN STATUS IN
-                            ('0','1','2','3','4','5')
-                        THEN records ELSE 0 END
-                    ), 0
-                ) AS rate
-            FROM bureau_month_status
-            WHERE {bureau_where}
-            GROUP BY 1
-            ORDER BY 1
-        """, args)
-
-        bureau = bureau.dropna(subset=["rate"])
-
-        if bureau.empty:
-            st.info("Không có trạng thái 0–5 để tính tỷ lệ.")
         else:
-            fig = px.line(
-                bureau,
-                x="MONTHS_BALANCE",
-                y="rate",
-                markers=True,
-                labels={
-                    "MONTHS_BALANCE": "Tháng tương đối",
-                    "rate": "Tỷ lệ (%)"
+            all_statuses = ["0", "1", "2", "3", "4", "5", "C", "X"]
+            selected = st.multiselect(
+                "Trạng thái", all_statuses, default=all_statuses
+            )
+            display_mode = st.radio(
+                "Đơn vị", ["Tỷ trọng (%)", "Số bản ghi"],
+                horizontal=True
+            )
+            bureau = query(con, """
+                WITH status_month AS (
+                    SELECT MONTHS_BALANCE,
+                           CAST(STATUS AS VARCHAR) AS status,
+                           SUM(records) AS n
+                    FROM bureau_month_status
+                    WHERE (? = 0 OR MONTHS_BALANCE BETWEEN ? AND 0)
+                    GROUP BY 1, 2
+                )
+                SELECT MONTHS_BALANCE, status, n,
+                       100.0 * n / NULLIF(
+                           SUM(n) OVER (PARTITION BY MONTHS_BALANCE), 0
+                       ) AS share_pct
+                FROM status_month ORDER BY MONTHS_BALANCE, status
+            """, [months, -months + 1])
+
+            bureau = bureau[bureau["status"].isin(selected)]
+            if bureau.empty:
+                st.info("Không có trạng thái phù hợp.")
+            else:
+                value_col = (
+                    "share_pct" if display_mode == "Tỷ trọng (%)"
+                    else "n"
+                )
+                status_colors = {
+                    "0": "#4A8ABD", "1": "#E19477",
+                    "2": "#71A793", "3": "#A08CBD",
+                    "4": "#C6A15F", "5": "#D77986",
+                    "C": "#608B92", "X": "#8892A1"
                 }
-            )
-
-            fig.update_traces(
-                line=dict(color="#116DA6", width=2.8),
-                marker=dict(size=6)
-            )
-            fig.update_layout(
-                template="plotly_white",
-                height=380,
-                paper_bgcolor="#FFFFFF",
-                plot_bgcolor="#FFFFFF",
-                font=dict(color="#34445B", size=13),
-                xaxis=dict(showgrid=False),
-                yaxis=dict(gridcolor="#E8EEF5", ticksuffix="%"),
-                margin=dict(l=14, r=14, t=16, b=28)
-            )
-            st.plotly_chart(
-                fig, use_container_width=True
-            )
-
-        with st.expander("Cách tính tỷ lệ Bureau", expanded=False):
-            st.caption(
-                "Mẫu số chỉ gồm trạng thái 0–5. "
-                "C/X không được tính là không quá hạn. "
-                "Bộ lọc trạng thái thay đổi tập mẫu."
-            )
-
-    st.divider()
-
-    with st.expander("Phạm vi dữ liệu và phương pháp", expanded=False):
-        st.caption(
-            "Các cửa sổ 6/12 tháng dựa trên mốc tương đối của nguồn. "
-            "Không bao gồm giao dịch chi tiết hoặc danh sách nhắc nợ."
-        )
+                fig = px.line(
+                    bureau,
+                    x="MONTHS_BALANCE", y=value_col,
+                    color="status", markers=True,
+                    color_discrete_map=status_colors,
+                    category_orders={"status": all_statuses},
+                    labels={
+                        "MONTHS_BALANCE": "Tháng tương đối",
+                        "status": "Trạng thái",
+                        "share_pct": "Tỷ trọng (%)",
+                        "n": "Số bản ghi"
+                    }
+                )
+                fig.update_traces(
+                    line=dict(width=2.6), marker=dict(size=5)
+                )
+                fig.update_layout(
+                    template="plotly_white",
+                    height=385,
+                    paper_bgcolor="#FFFFFF",
+                    plot_bgcolor="#FFFFFF",
+                    font=dict(color="#172A42", size=12),
+                    margin=dict(l=12, r=12, t=12, b=82),
+                    xaxis=dict(showgrid=False),
+                    yaxis=dict(gridcolor="#E5EBF2"),
+                    legend=dict(
+                        orientation="h", yanchor="top", y=-.22,
+                        xanchor="center", x=.5, title=None,
+                        font=dict(color="#111827", size=11)
+                    )
+                )
+                st.plotly_chart(
+                    fig, use_container_width=True,
+                    config={"displaylogo": False}
+                )
 
 
 if page == "1. Hồ sơ tiếp nhận":
