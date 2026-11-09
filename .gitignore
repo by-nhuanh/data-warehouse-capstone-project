@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+.pytest_cache/
+.streamlit/secrets.toml
+dbt/target/
+dbt/logs/

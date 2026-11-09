@@ -1,4 +1,0 @@
-source_name,total_rows,unmatched_previous_rows,unmatched_previous_but_customer_matched,unmatched_customer_rows,conflicting_customer_rows
-credit_card_balance,3840312,1082816,1082816,0,0
-installments_payments,13605401,1250826,1250826,0,0
-pos_cash_balance,10001358,340561,340561,0,0
