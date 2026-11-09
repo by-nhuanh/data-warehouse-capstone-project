@@ -34,17 +34,20 @@ html, body, .stApp, [data-testid="stAppViewContainer"],
 [data-testid="stSidebar"] [data-testid="stExpander"]{
     border:1px solid #7FA4CA;border-radius:10px
 }
-h1,h2,h3,p,label,small,span{color:#111111}
-h1,h2,h3{font-weight:750!important;letter-spacing:-.02em}
+[data-testid="stMain"] p,
+[data-testid="stMain"] label,
+[data-testid="stMain"] small,
+[data-testid="stMain"] span{color:#111111}
+h1,h2,h3{font-weight:750!important;letter-spacing:-.02em;color:#16385F!important}
 h1{font-size:1.85rem!important}
 h3{font-size:1.13rem!important}
-[data-testid="stWidgetLabel"] p,
-[data-testid="stCaptionContainer"] p,
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stRadio"] p,
-[data-testid="stCheckbox"] p,
-[data-testid="stSelectbox"] label,
-[data-testid="stMultiSelect"] label{
+[data-testid="stMain"] [data-testid="stWidgetLabel"] p,
+[data-testid="stMain"] [data-testid="stCaptionContainer"] p,
+[data-testid="stMain"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stMain"] [data-testid="stRadio"] p,
+[data-testid="stMain"] [data-testid="stCheckbox"] p,
+[data-testid="stMain"] [data-testid="stSelectbox"] label,
+[data-testid="stMain"] [data-testid="stMultiSelect"] label{
     color:#111111!important
 }
 [data-baseweb="select"]>div,
@@ -52,9 +55,9 @@ h3{font-size:1.13rem!important}
     background:#FFFFFF!important;border-color:#90A4B9!important;
     color:#111111!important
 }
-[data-baseweb="select"] span,
-[data-baseweb="select"] input,
-[data-baseweb="tag"] span{color:#111111!important}
+[data-testid="stMain"] [data-baseweb="select"] span,
+[data-testid="stMain"] [data-baseweb="select"] input{color:#111111!important}
+[data-baseweb="tag"] span{color:#FFFFFF!important}
 [data-testid="stSlider"] [data-testid="stTickBar"] span{color:#111111!important}
 [data-testid="stPlotlyChart"]{
     background:#FFFFFF!important;border:1px solid #C9D9E8;
@@ -70,12 +73,13 @@ h3{font-size:1.13rem!important}
 .dtwh-brand-sub{font-size:.82rem;color:#FFFFFF!important;margin:0 0 17px}
 .dtwh-header{background:#EAF3FB;border:1px solid #C8DCEB;
     border-radius:14px;padding:19px 22px;margin-bottom:20px}
-.dtwh-header h1,.dtwh-header p,.dtwh-kicker{color:#111111!important}
+.dtwh-header h1,.dtwh-kicker{color:#16385F!important}
+.dtwh-header p{color:#111111!important}
 .dtwh-header h1{margin:3px 0 5px}
 .dtwh-header p{font-size:.95rem;margin:0}
 .dtwh-kicker{font-size:.73rem;font-weight:800;letter-spacing:.09em}
-.dtwh-filter-head{font-size:1.02rem;font-weight:750;color:#111111!important;margin:14px 0 10px}
-.dtwh-section{font-size:1.15rem;font-weight:800;color:#111111!important;margin:29px 0 15px}
+.dtwh-filter-head{font-size:1.02rem;font-weight:750;color:#164879!important;margin:14px 0 10px}
+.dtwh-section{font-size:1.15rem;font-weight:800;color:#164879!important;margin:29px 0 15px}
 .dtwh-kpi{box-sizing:border-box;min-height:150px;height:100%;
     padding:19px 19px 17px;border-radius:14px;
     border:1px solid #C4D3E1;background:var(--kpi-bg,#E7F1FB)!important;
@@ -857,11 +861,6 @@ def dashboard_history():
             ["Tỷ lệ (%)", "Số hồ sơ"],
             horizontal=True,
             key="card_display"
-        )
-        st.caption(
-            "Tỷ lệ TARGET = 1 theo nhóm sử dụng thẻ"
-            if population == "Tất cả hồ sơ có nhãn"
-            else "Cơ cấu mức sử dụng thẻ trong nhóm TARGET đã chọn"
         )
         card_groups = query(con, f"""
             SELECT CASE
