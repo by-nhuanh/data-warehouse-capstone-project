@@ -11,6 +11,8 @@ streamlit run bi/streamlit/app.py
 
 ## Streamlit Community Cloud
 
+**Live dashboard:** [Open DTWH Credit Risk Dashboard](https://dtwh-credit-risk.streamlit.app/)
+
 - Repository: `by-nhuanh/data-warehouse-capstone-project`
 - Main file: `bi/streamlit/app.py`
 - Data: `data/bi_serving/*.parquet`
