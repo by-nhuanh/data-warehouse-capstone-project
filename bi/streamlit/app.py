@@ -16,93 +16,49 @@ ROOT = Path(__file__).resolve().parents[2]
 
 st.markdown("""
 <style>
-:root {
-  --d-navy:#092B56; --d-navy2:#0F407A; --d-blue:#126EB1;
-  --d-text:#152B48; --d-muted:#516784; --d-border:#DCE7F4;
+html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"],[data-testid="stHeader"] {
+    background:#FFFFFF!important;color:#172A42!important;color-scheme:light!important;
 }
-.stApp {
-  background:linear-gradient(135deg,#F6FAFF 0%,#FFFFFF 55%,#F3F8FF 100%);
-  color:var(--d-text);
+.block-container {max-width:1530px;padding:1.6rem 2rem 3rem}
+[data-testid="stSidebar"] {background:#0B2C55!important}
+[data-testid="stSidebar"] * {color:#FFFFFF}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
+    background:#1C5086;border-radius:10px
 }
-.block-container {max-width:1580px;padding:1.65rem 2.1rem 3rem}
-[data-testid="stSidebar"] {
-  background:linear-gradient(165deg,#092953 0%,#0D3A74 85%,#10539C 100%);
-  border-right:0;
-}
-[data-testid="stSidebar"] * {color:#F3F8FF}
-[data-testid="stSidebar"] [data-testid="stRadio"] label,
-[data-testid="stSidebar"] [data-testid="stRadio"] p {color:#F3F8FF!important}
-[data-testid="stSidebar"] [role="radiogroup"] label {
-  border-radius:11px;padding:8px 10px;margin-bottom:4px;
-}
-[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked){
-  background:rgba(90,159,239,.33);
-}
-[data-testid="stSidebar"] [data-testid="stExpander"]{
-  border:1px solid rgba(224,239,255,.23);
-  border-radius:10px;
-}
-h1,h2,h3 {color:#0C2D59!important;letter-spacing:-.025em}
-h1 {font-size:clamp(1.65rem,2.2vw,2.2rem)!important;font-weight:750!important}
-h3 {font-size:1.14rem!important;font-weight:700!important}
-[data-testid="stWidgetLabel"] p {
-  font-weight:650!important;color:#263F60!important;font-size:.92rem!important;
-}
-[data-baseweb="select"]>div {
-  background:#FFFFFF!important;border:1px solid #BACDE3!important;
-  border-radius:9px!important;min-height:42px;
-}
+h1,h2,h3 {color:#16385F!important;letter-spacing:-.02em}
+h1{font-size:1.85rem!important;font-weight:780!important}
+h3{font-size:1.13rem!important;font-weight:700!important}
+[data-testid="stWidgetLabel"] p {color:#233B56!important;font-weight:650!important}
+[data-baseweb="select"]>div {background:#FFFFFF!important;border-color:#C6D5E4!important}
 [data-testid="stPlotlyChart"] {
-  background:#FFFFFF;
-  border:1px solid var(--d-border);
-  border-radius:14px;
-  padding:8px;
-  box-shadow:0 5px 17px rgba(12,51,95,.052);
+    background:#FFFFFF!important;border:1px solid #DEE6EF;
+    border-radius:12px;padding:8px
 }
-[data-testid="stPlotlyChart"]>div{border-radius:11px}
-[data-testid="stCaptionContainer"] p{color:var(--d-muted)!important;line-height:1.5}
-[data-testid="stHorizontalBlock"]{row-gap:1rem}
-[data-testid="stAlert"]{border-radius:11px}
-[data-testid="stMetric"] {
-  background:#FFFFFF;border:1px solid var(--d-border);
-  padding:16px 18px;border-radius:12px;
-}
-.dtwh-header{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:15px 20px;margin:0 0 20px;border-radius:17px;
-  background:linear-gradient(100deg,#EFF6FF,#FFFFFF);
-  border:1px solid #DCE9FA;
-}
-.dtwh-header h1{font-size:1.75rem!important;margin:0 0 4px}
-.dtwh-header p{color:#506784;font-size:.93rem;margin:0}
-.dtwh-kicker{font-size:.73rem;font-weight:750;letter-spacing:.1em;
-  text-transform:uppercase;color:#126EB1;margin-bottom:3px}
-.dtwh-brand{font-size:1.42rem;font-weight:820;color:#FFFFFF}
-.dtwh-brand-sub{font-size:.79rem;color:#C7E0FC;margin:2px 0 18px}
-.dtwh-sidebar-status{padding:12px 14px;background:rgba(100,170,245,.16);
-  border:1px solid rgba(200,228,255,.24);border-radius:10px;
-  font-size:.89rem;color:#E9F5FF}
-.dtwh-section{font-weight:750;font-size:1.13rem;color:#0C3470;
-  margin:23px 0 11px}
-.dtwh-filter-head{font-size:1rem;font-weight:750;color:#0C3470;
-  padding:3px 0 11px}
-.dtwh-kpi{position:relative;overflow:hidden;min-height:125px;
-  padding:17px 17px 15px;border-radius:14px;
-  border:1px solid #DAE7F5;
-  background:linear-gradient(150deg,#FFFFFF 46%,var(--kpi-tint,#F1F7FF));
-  box-shadow:0 5px 15px rgba(13,58,110,.06)}
-.dtwh-kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;
-  width:4px;background:var(--kpi-color,#126EB1)}
-.dtwh-kpi-label{font-size:.81rem;font-weight:700;color:#46607E;line-height:1.45}
-.dtwh-kpi-value{font-size:clamp(1.42rem,1.8vw,1.95rem);
-  font-weight:820;color:var(--kpi-color,#0F376C);
-  white-space:nowrap;letter-spacing:-.04em;margin:9px 0 5px}
-.dtwh-kpi-detail{font-size:.77rem;color:#58708F;line-height:1.35}
+[data-testid="stHorizontalBlock"] {row-gap:1rem}
+[data-testid="stMetric"] {background:#F2F6FA!important;border:1px solid #DEE6EF;
+    border-radius:12px;padding:15px}
+[data-testid="stCaptionContainer"] p {color:#55677D!important}
+.dtwh-brand{font-size:1.45rem;font-weight:800;color:#FFFFFF}
+.dtwh-brand-sub{font-size:.8rem;color:#C7DDF4;margin:0 0 17px}
+.dtwh-header {background:#F4F8FC;border:1px solid #DCE6F1;
+    border-radius:13px;padding:18px 21px;margin-bottom:17px}
+.dtwh-header h1{margin:3px 0 5px}
+.dtwh-header p{color:#536B83;font-size:.94rem;margin:0}
+.dtwh-kicker{font-size:.73rem;font-weight:800;letter-spacing:.09em;color:#296F9C}
+.dtwh-filter-head{font-size:1rem;font-weight:750;color:#164879;margin:12px 0 7px}
+.dtwh-section{font-size:1.14rem;font-weight:800;color:#164879;margin:23px 0 12px}
+.dtwh-kpi{min-height:117px;padding:17px;border-radius:13px;
+    border:1px solid #DFE6EE;background:var(--kpi-bg,#EAF3FC)!important}
+.dtwh-kpi:before{display:none!important}
+.dtwh-kpi-label{font-size:.83rem;font-weight:700;color:#455A72}
+.dtwh-kpi-value{font-size:clamp(1.32rem,1.85vw,1.98rem);font-weight:800;
+    color:#111827!important;letter-spacing:-.03em;margin:9px 0 5px;white-space:nowrap}
+.dtwh-kpi-detail{font-size:.77rem;color:#566A7E;line-height:1.4}
 @media(max-width:768px){
-  .block-container{padding:1.1rem .8rem 2rem}
-  .dtwh-header{padding:13px;display:block}
-  .dtwh-kpi{min-height:105px;padding:13px 14px}
-  .dtwh-kpi-value{font-size:1.4rem}
+    .block-container{padding:1.1rem .8rem 2rem}
+    .dtwh-header{padding:13px}
+    .dtwh-kpi{min-height:103px;padding:12px}
+    .dtwh-kpi-value{font-size:1.35rem}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -121,19 +77,20 @@ def number(value):
 
 def metric_card(title, value, detail=None, accent="blue"):
     colors = {
-        "blue": ("#0D5F9E", "#ECF5FF"),
-        "red": ("#C32346", "#FFF1F4"),
-        "teal": ("#087C77", "#ECFAF7"),
-        "violet": ("#6139B1", "#F4F0FF"),
-        "orange": ("#B54709", "#FFF5E8"),
+        "blue": "#EAF3FC",
+        "red": "#FFF0EC",
+        "teal": "#E7F6F1",
+        "violet": "#F0ECFA",
+        "orange": "#FFF2E4",
+        "slate": "#F0F4F8",
     }
-    color, tint = colors.get(accent, colors["blue"])
+    color = colors.get(accent, colors["blue"])
     detail_html = (
         f'<div class="dtwh-kpi-detail">{escape(str(detail))}</div>'
         if detail else '<div class="dtwh-kpi-detail">&nbsp;</div>'
     )
     st.markdown(
-        f'<div class="dtwh-kpi" style="--kpi-color:{color};--kpi-tint:{tint}">'
+        f'<div class="dtwh-kpi" style="--kpi-bg:{color}">'
         f'<div class="dtwh-kpi-label">{escape(str(title))}</div>'
         f'<div class="dtwh-kpi-value">{escape(str(value))}</div>'
         f'{detail_html}</div>',
@@ -250,14 +207,6 @@ with st.sidebar:
         ["1. Hồ sơ tiếp nhận", "2. Lịch sử tín dụng"]
     )
     st.divider()
-    ready_count = sum(
-        item.get("status") == "READY" for item in sources.values()
-    )
-    st.markdown(
-        f'<div class="dtwh-sidebar-status">✓ &nbsp;'
-        f'{ready_count}/{len(sources)} nguồn dữ liệu sẵn sàng</div>',
-        unsafe_allow_html=True
-    )
     with st.expander("Chi tiết nguồn dữ liệu"):
         st.json(sources)
 
@@ -265,7 +214,7 @@ with st.sidebar:
 def dashboard_application():
     st.markdown(
         '<div class="dtwh-header"><div>'
-        '<div class="dtwh-kicker">Dashboard 01 · Application risk</div>'
+        '<div class="dtwh-kicker">DASHBOARD 01 · APPLICATION RISK</div>'
         '<h1>Giám sát rủi ro hồ sơ tiếp nhận</h1>'
         '<p>Phân tích hồ sơ vay, tỷ lệ TARGET và các chỉ số tài chính</p>'
         '</div></div>',
@@ -606,7 +555,7 @@ def dashboard_application():
 def dashboard_history():
     st.markdown(
         '<div class="dtwh-header"><div>'
-        '<div class="dtwh-kicker">Dashboard 02 · Credit history</div>'
+        '<div class="dtwh-kicker">DASHBOARD 02 · CREDIT HISTORY</div>'
         '<h1>Lịch sử tín dụng và hành vi thanh toán</h1>'
         '<p>Theo dõi lịch sử trả góp, hợp đồng và dư nợ tín dụng</p>'
         '</div></div>',
