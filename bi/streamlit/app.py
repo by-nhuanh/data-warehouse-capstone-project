@@ -97,6 +97,47 @@ h3{font-size:1.13rem!important}
     .dtwh-kpi{min-height:122px;padding:14px;margin-bottom:14px!important}
     .dtwh-kpi-value{font-size:1.43rem}
 }
+
+/* Sidebar contrast: navigation remains white on navy. */
+section[data-testid="stSidebar"] [data-testid="stRadio"] label,
+section[data-testid="stSidebar"] [data-testid="stRadio"] label p,
+section[data-testid="stSidebar"] [data-testid="stRadio"] label span,
+section[data-testid="stSidebar"] [role="radiogroup"] label,
+section[data-testid="stSidebar"] [role="radiogroup"] label p,
+section[data-testid="stSidebar"] [role="radiogroup"] label span,
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+    color:#FFFFFF!important;
+}
+section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
+    background:#26629B!important;
+}
+section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p,
+section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) span {
+    color:#FFFFFF!important;
+}
+/* Source details use black text on solid white, including expanded JSON. */
+section[data-testid="stSidebar"] [data-testid="stExpander"] {
+    background:#FFFFFF!important;
+    border:1px solid #B6CEE4!important;
+    border-radius:11px!important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary,
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary *,
+section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stMarkdownContainer"] *,
+section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stJson"] *,
+section[data-testid="stSidebar"] [data-testid="stExpander"] pre,
+section[data-testid="stSidebar"] [data-testid="stExpander"] code {
+    color:#111111!important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stJson"],
+section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stJson"] *,
+section[data-testid="stSidebar"] [data-testid="stExpander"] pre {
+    background:#FFFFFF!important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] svg {
+    color:#111111!important;
+    stroke:#111111!important;
+}
 </style>
 """, unsafe_allow_html=True)
 
